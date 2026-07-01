@@ -7,60 +7,64 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .forms import ArticleForm
 from django.core.cache import cache
-
-
-
+from django.db.models import Q
 
 
 def index_view(request):
-    # Получаем текст, который пользователь ввёл в строку поиска (если он есть)
-    query = request.GET.get('q', '')
+    # Получаем текст из строки поиска
+    query = request.GET.get('q', '').strip()
 
+    # Получаем ID тега, если пользователь кликнул по нему в сайдбаре
+    tag_id = request.GET.get('tag', '')
+
+    # Базовый QuerySet (все статьи)
+    articles_list = Article.objects.all().order_by('-created_at')
+
+    # Если передан поисковый запрос
     if query:
-        # Если поисковый запрос есть, фильтруем статьи.
-        articles_list = Article.objects.filter(
-            title__icontains=query
-        ) | Article.objects.filter(
-            content__icontains=query
-        )
-    else:
-        # Если поиска нет, берем вообще все статьи из базы.
-        articles_list = Article.objects.all().order_by('-created_at')
+        words = query.split()
+        search_filter = Q()
+        for word in words:
+            search_filter &= (
+                    Q(title__icontains=word) |
+                    Q(content__icontains=word) |
+                    Q(author__username__icontains=word)
+            )
+        articles_list = articles_list.filter(search_filter)
 
+    # Если пользователь кликнул на тег, фильтруем статьи по этому тегу
+    selected_tag = None
+    if tag_id:
+        articles_list = articles_list.filter(tags__id=tag_id)
+        # Находим сам объект тега, чтобы потом красиво написать в заголовке "Записи с тегом: спорт"
+        selected_tag = get_object_or_404(Tag, id=tag_id)
 
-    # Передаем пагинатору список статей и говорим: "Выводи по 3 статьи на страницу"
+    # Пагинация
     paginator = Paginator(articles_list, 3)
-
-    # Смотрим, на какой странице сейчас находится пользователь
     page_number = request.GET.get('page')
-
-    # Получаем объект текущей страницы со статьями для этой страницы
     page_obj = paginator.get_page(page_number)
 
     popular_tags = Tag.objects.all()
 
-
-    # Собираем все данные в один словарь
     context = {
-        'page_obj': page_obj,  # Здесь лежат статьи для текущей страницы
-        'popular_tags': popular_tags,  # Здесь лежат теги
-        'query': query,  # Возвращаем текст поиска обратно в инпут
+        'page_obj': page_obj,
+        'popular_tags': popular_tags,
+        'query': query,
+        'selected_tag': selected_tag,  # Передаем выбранный тег в HTML
     }
-
-    # Функция render склеивает наш HTML-шаблон с данными из словаря context
     return render(request, 'blog/index.html', context)
 
 
 from django.shortcuts import get_object_or_404
 
 
-# (Остальные импорты у вас уже есть сверху файла)
+
 
 def article_detail_view(request, pk):
 
     article = get_object_or_404(Article, pk=pk)
 
-    # ИСПРАВЛЕНО: Берем только ГЛАВНЫЕ комментарии, у которых нет родителя (parent=None)
+    #  Берем только ГЛАВНЫЕ комментарии, у которых нет родителя
     comments = article.comments.filter(parent=None)
 
     if request.method == 'POST':
