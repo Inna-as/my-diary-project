@@ -1,0 +1,86 @@
+<!-- Берём каркас из base.html -->
+{% extends 'blog/base.html' %}
+{% load cache %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Левая колонка: Список статей и Поиск -->
+    <div class="col-md-8">
+
+        <!-- Форма поиска  -->
+        <form method="get" action="." class="d-flex mb-4">
+
+            <input type="text" name="q" value="{{ query }}" class="form-control me-2" placeholder="Поиск по статьям...">
+            <button type="submit" class="btn btn-primary">Искать</button>
+        </form>
+
+        <h1 class="mb-4">Все записи</h1>
+
+        {% for article in page_obj %}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <!-- Выводим заголовок статьи -->
+                    <h2><a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">{{ article.title }}</a></h2>
+                    <!-- Выводим автора и красивую дату создания -->
+                    <p class="text-muted small">Автор: {{ article.author.username }} | Дата: {{ article.created_at|date:"d.m.Y" }}</p>
+                    <!-- Выводим текст статьи, ограничивая его первыми 30 словами -->
+                    <p class="card-text">{{ article.content|truncatewords:30 }}</p>
+
+                    <!-- Выводим теги, привязанные к этой конкретной статье -->
+                    <div>
+                        {% for tag in article.tags.all %}
+                            <span class="badge bg-secondary">{{ tag.name }}</span>
+                        {% empty %}
+                            <span class="text-muted small">Нет тегов</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <!-- Если статей в базе вообще нет или поиск ничего не нашёл -->
+            <p class="text-muted">Записей пока нет.</p>
+        {% endfor %}
+
+        <!-- Блок пагинации (Постраничный вывод) -->
+        {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination pagination-sm">
+                    <!-- Кнопка "Назад" -->
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Назад</a></li>
+                    {% endif %}
+
+                    <!-- Номер текущей страницы из общего количества -->
+                    <li class="page-item disabled"><span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span></li>
+
+                    <!-- Кнопка "Вперед" -->
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Вперед</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    </div>
+
+    <div class="col-md-4">
+        <!-- Говорим Django: сохрани этот блок в кэш под именем sidebar_tags на 60 секунд -->
+        {% cache 60 sidebar_tags %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white fw-bold">Популярные теги</div>
+            <div class="card-body">
+                {% for tag in popular_tags %}
+                    <span class="badge bg-info text-dark me-1">{{ tag.name }}</span>
+                {% empty %}
+                    <p class="small text-muted mb-0">Тегов нет.</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endcache %}
+    </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

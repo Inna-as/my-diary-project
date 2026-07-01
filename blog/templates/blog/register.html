@@ -1,0 +1,25 @@
+{% extends 'blog/base.html' %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-md-4 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title h4 text-center mb-4">Регистрация в дневнике</h2>
+                <form method="post" action=".">
+                    {% csrf_token %}
+
+                    <!-- Выводим встроенные поля логина и двойного пароля -->
+                    {% bootstrap_form form %}
+
+                    <button type="submit" class="btn btn-success w-100 mt-3">Зарегистрироваться</button>
+                </form>
+                <div class="text-center mt-3 small">
+                    <a href="{% url 'blog:login' %}" class="text-decoration-none">Уже есть аккаунт? Войти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

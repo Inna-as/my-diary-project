@@ -1,0 +1,101 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <!-- Кнопка возврата на главную -->
+        <a href="{% url 'blog:index' %}" class="btn btn-sm btn-outline-secondary mb-3">&larr; На главную</a>
+
+        <!-- Белая карточка со статьей -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h1 class="card-title h2 mb-3">{{ article.title }}</h1>
+                                <p class="text-muted small">Автор: {{ article.author.username }} | Дата: {{ article.created_at|date:"d.m.Y" }}</p>
+
+                <!-- Кнопки управления (Показываются ТОЛЬКО автору этой статьи) -->
+                {% if user == article.author %}
+                    <div class="mb-3">
+                        <a href="{% url 'blog:article_update' article.pk %}" class="btn btn-sm btn-warning me-1">Редактировать</a>
+                        <a href="{% url 'blog:article_delete' article.pk %}" class="btn btn-sm btn-danger">Удалить</a>
+                    </div>
+                {% endif %}
+
+                <hr>
+
+                <!-- Выводим текст статьи -->
+                <p class="card-text" style="white-space: pre-line;">{{ article.content }}</p>
+
+                <!-- Теги статьи -->
+                <div class="mt-4">
+                    {% for tag in article.tags.all %}
+                        <span class="badge bg-secondary">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- БЛОК КОММЕНТАРИЕВ (Требование 2.2) -->
+        <h3 class="h5 mb-3">Комментарии</h3>
+
+        <!-- Форма отправки нового комментария -->
+        <form method="post" action="." class="mb-4 card p-3 shadow-sm">
+            <!-- Защита Django от хакерских атак -->
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="id_content" class="form-label small text-muted">Оставьте свой отзыв:</label>
+                <textarea name="content" id="id_content" class="form-control" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary align-self-start">Отправить</button>
+        </form>
+
+        <!-- Список всех комментариев к статье -->
+        {% for comment in comments %}
+            <!-- Главный комментарий -->
+            <div class="card mb-2 bg-white shadow-sm border-0 border-start border-primary border-3">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong class="small">{{ comment.author.username }}</strong>
+                        <span class="text-muted extra-small" style="font-size: 0.8rem;">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                    </div>
+                    <p class="mb-0 small text-secondary">{{ comment.content }}</p>
+
+                    <!-- Ссылка "Ответить", которая открывает скрытую мини-форму -->
+                    <div class="mt-1">
+                        <a class="text-decoration-none small" style="font-size: 0.8rem;" data-bs-toggle="collapse" href="#replyForm{{ comment.id }}">Ответить</a>
+
+                        <!-- Скрытая форма для ответа -->
+                        <div class="collapse mt-2" id="replyForm{{ comment.id }}">
+                            <form method="post" action="." class="d-flex">
+                                {% csrf_token %}
+                                <!-- Передаем ID этого комментария как parent_id -->
+                                <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                <input type="text" name="content" class="form-control form-control-sm me-2" placeholder="Ваш ответ..." required>
+                                <button type="submit" class="btn btn-sm btn-secondary">ОК</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- ИСПРАВЛЕНО: Теперь этот блок закрывается правильно -->
+
+            <!-- ВЛОЖЕННЫЕ ОТВЕТЫ (Древовидная структура) -->
+            {% for reply in comment.replies.all %}
+                <!-- Класс ms-5 делает отступ вправо, показывая вложенность -->
+                <div class="card mb-2 bg-light shadow-sm border-0 border-start border-secondary border-3 ms-5">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong class="small text-muted">{{ reply.author.username }} (ответ)</strong>
+                            <span class="text-muted extra-small" style="font-size: 0.8rem;">{{ reply.created_at|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <p class="mb-0 small text-secondary">{{ reply.content }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+
+        {% empty %}
+            <p class="text-muted small">Комментариев пока нет. Станьте первым!</p>
+        {% endfor %}
+
+    </div>
+</div>
+{% endblock %}
