@@ -7,18 +7,26 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .forms import ArticleForm
 from django.core.cache import cache
-from django.db.models import Q
+from django.db.models import Count, Q
+
 
 
 def index_view(request):
-    # Получаем текст из строки поиска
+    # Получаем параметры поиска, тега и сортировки из адресной строки
     query = request.GET.get('q', '').strip()
-
-    # Получаем ID тега, если пользователь кликнул по нему в сайдбаре
     tag_id = request.GET.get('tag', '')
+    sort_by = request.GET.get('sort', 'new')  # ИСПРАВЛЕНО: Теперь Django видит сортировку!
 
-    # Базовый QuerySet (все статьи)
-    articles_list = Article.objects.all().order_by('-created_at')
+    # Базовый QuerySet: агрегируем количество комментариев к каждой статье через Count
+    articles_list = Article.objects.annotate(comments_count=Count('comments'))
+
+    #  Логика переключения сортировки
+    if sort_by == 'old':
+        articles_list = articles_list.order_by('created_at')  # От старых к новым
+    elif sort_by == 'popular':
+        articles_list = articles_list.order_by('-comments_count', '-created_at')  # Самые обсуждаемые
+    else:
+        articles_list = articles_list.order_by('-created_at')  # Сначала новые (по умолчанию)
 
     # Если передан поисковый запрос
     if query:
@@ -36,7 +44,6 @@ def index_view(request):
     selected_tag = None
     if tag_id:
         articles_list = articles_list.filter(tags__id=tag_id)
-        # Находим сам объект тега, чтобы потом красиво написать в заголовке "Записи с тегом: спорт"
         selected_tag = get_object_or_404(Tag, id=tag_id)
 
     # Пагинация
@@ -50,7 +57,8 @@ def index_view(request):
         'page_obj': page_obj,
         'popular_tags': popular_tags,
         'query': query,
-        'selected_tag': selected_tag,  # Передаем выбранный тег в HTML
+        'selected_tag': selected_tag,
+        'sort_by': sort_by,  # Передаем текущую сортировку обратно в HTML
     }
     return render(request, 'blog/index.html', context)
 
