@@ -19,7 +19,8 @@ class Article(models.Model):
     content = models.TextField(verbose_name="Текст статьи")
 
     # Связь "Один ко многим".
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Автор")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Автор", related_name='articles')
+
 
     # Связь "Многие ко многим".
     tags = models.ManyToManyField(Tag, blank=True, verbose_name="Теги")
@@ -36,7 +37,8 @@ class Comment(models.Model):
     # Привязываем комментарий к определенной статье
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments', verbose_name="Статья")
     # Привязываем к пользователю, который пишет этот комментарий
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Автор")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+
     content = models.TextField(verbose_name="Текст комментария")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата написания")
 

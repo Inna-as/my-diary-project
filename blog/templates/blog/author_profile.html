@@ -1,0 +1,58 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Левая колонка: Статьи этого автора -->
+    <div class="col-md-8">
+        <h3 class="mb-4 h4">Публикации автора {{ author.username }}</h3>
+
+        {% for article in author_articles %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h2><a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">{{ article.title }}</a></h2>
+                    <p class="text-muted extra-small" style="font-size: 0.85rem;">
+                        Дата: {{ article.created_at|date:"d.m.Y" }} |
+                        <span class="text-primary">💬 Комментарии: {{ article.comments_count }}</span>
+                    </p>
+                    <p class="card-text text-secondary">{{ article.content|truncatewords:20 }}</p>
+
+                    <div>
+                        {% for tag in article.tags.all %}
+                            <a href="{% url 'blog:index' %}?tag={{ tag.id }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted">Этот автор ещё не написал ни одной статьи.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Правая колонка: Карточка статистики -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white fw-bold">👤 Профиль автора</div>
+            <div class="card-body text-center p-4">
+                <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center border" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                    👤
+                </div>
+                <h3 class="h5 mt-3 mb-1"><strong>{{ author.username }}</strong></h3>
+                <p class="text-muted small">Зарегистрирован: {{ author.date_joined|date:"d.m.Y" }}</p>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6 border-end">
+                        <h4 class="h5 mb-0 text-success fw-bold">{{ total_articles }}</h4>
+                        <span class="text-muted extra-small" style="font-size: 0.75rem;">Статей</span>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="h5 mb-0 text-info fw-bold">{{ total_comments }}</h4>
+                        <span class="text-muted extra-small" style="font-size: 0.75rem;">Комментариев</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'blog:index' %}" class="btn btn-sm btn-outline-secondary w-100 mt-3 rounded-pill">← На главную</a>
+    </div>
+</div>
+{% endblock %}

@@ -48,12 +48,13 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h2><a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">{{ article.title }}</a></h2>
-                                        <p class="text-muted extra-small" style="font-size: 0.85rem;">
-                        Автор: <strong>{{ article.author.username }}</strong> |
+                                         <p class="text-muted extra-small" style="font-size: 0.85rem;">
+                        <!--   имя автора ведет в его профиль -->
+                        Автор: <a href="{% url 'blog:author_profile' article.author.username %}" class="text-decoration-none fw-bold text-dark">{{ article.author.username }}</a> |
                         Дата: {{ article.created_at|date:"d.m.Y" }} |
-                        <!-- ДОБАВЛЕНО: Счетчик комментариев для каждой статьи -->
                         <span class="text-primary">💬 Комментарии: {{ article.comments_count }}</span>
                     </p>
+
 
                     <p class="card-text text-secondary">{{ article.content|truncatewords:20 }}</p>
 

@@ -16,6 +16,8 @@ urlpatterns = [
 #  Ссылки на редактирование и удаление
     path('article/<int:pk>/edit/', views.article_update_view, name='article_update'),
     path('article/<int:pk>/delete/', views.article_delete_view, name='article_delete'),
+    #  Ссылка на профиль автора (принимает имя пользователя)
+    path('author/<str:username>/', views.author_profile_view, name='author_profile'),
 
     #   адреса для входа и выхода на сайт
     path('login/', LoginView.as_view(template_name='blog/login.html'), name='login'),

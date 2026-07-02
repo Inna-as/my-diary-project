@@ -8,6 +8,10 @@ from django.contrib.auth.decorators import login_required
 from .forms import ArticleForm
 from django.core.cache import cache
 from django.db.models import Count, Q
+from django.contrib.auth.models import User
+
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -180,3 +184,29 @@ def article_delete_view(request, pk):
 
     # Если метод GET — показываем страницу с вопросом "Вы уверены?"
     return render(request, 'blog/article_confirm_delete.html', {'article': article})
+
+ #Страница профиля автора со списком его статей и статистикой.
+def author_profile_view(request, username):
+
+    # Находим автора по его имени, если такого нет — выдаем чистую ошибку 404
+    author = get_object_or_404(User, username=username)
+
+    # Считаем статистику автора через его связи
+    total_articles = author.articles.count()
+    total_comments = author.comments.count()
+
+    # Забираем все статьи этого автора, сортируя от новых к старым
+    author_articles = author.articles.all().order_by('-created_at')
+
+    # Считаем комментарии к карточкам статей на этой странице
+    author_articles = author_articles.annotate(comments_count=Count('comments'))
+
+    context = {
+        'author': author,
+        'total_articles': total_articles,
+        'total_comments': total_comments,
+        'author_articles': author_articles,
+    }
+    return render(request, 'blog/author_profile.html', context)
+
+
