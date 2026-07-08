@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.db.models import Count, Q
 from django.contrib.auth.models import User
 
-from django.shortcuts import get_object_or_404
+
 
 
 
@@ -19,7 +19,7 @@ def index_view(request):
     # Получаем параметры поиска, тега и сортировки из адресной строки
     query = request.GET.get('q', '').strip()
     tag_id = request.GET.get('tag', '')
-    sort_by = request.GET.get('sort', 'new')  # ИСПРАВЛЕНО: Теперь Django видит сортировку!
+    sort_by = request.GET.get('sort', 'new')
 
     # Базовый QuerySet: агрегируем количество комментариев к каждой статье через Count
     articles_list = Article.objects.annotate(comments_count=Count('comments'))
@@ -76,7 +76,7 @@ def article_detail_view(request, pk):
 
     article = get_object_or_404(Article, pk=pk)
 
-    #  Берем только ГЛАВНЫЕ комментарии, у которых нет родителя
+    #  Берем только главные комментарии, у которых нет родителя
     comments = article.comments.filter(parent=None)
 
     if request.method == 'POST':
@@ -106,9 +106,7 @@ def article_detail_view(request, pk):
 
 
 def register_view(request):
-    """
-    Страница регистрации новых пользователей.
-    """
+
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():

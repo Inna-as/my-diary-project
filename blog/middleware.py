@@ -7,13 +7,13 @@ class SimplePerformanceMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. ЗАСЕКАЕМ ВРЕМЯ (Срабатывает ДО того, как запрос попал во views.py)
+        # 1. ЗАСЕКАЕМ ВРЕМЯ
         start_time = time.time()
 
-        # Передаем запрос дальше по цепочке Django (в наши представления/views)
+        # Передаем запрос дальше по цепочке Django
         response = self.get_response(request)
 
-        # 2. СЧИТАЕМ РАЗНИЦУ (Срабатывает ПОСЛЕ того, как страница сгенерировалась)
+        # 2. Считаем разницу
         duration = time.time() - start_time
 
         # Добавляем кастомный HTTP-заголовок к ответу

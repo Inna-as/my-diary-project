@@ -32,7 +32,7 @@ class Article(models.Model):
         return self.title
 
 
-# 3. ТАБЛИЦА ДЛЯ КОММЕНТАРИЕВ
+# 3. Таблица коминтариев
 class Comment(models.Model):
     # Привязываем комментарий к определенной статье
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments', verbose_name="Статья")

@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_bootstrap5',
-    'blog',  # Наше приложение блога
+    'blog',  #  приложение блога
 ]
 
 
@@ -43,11 +43,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'my_diary_project.urls'
 
-# НАСТРОЙКА ШАБЛОНОВ (ИСПРАВЛЕНО)
+# НАСТРОЙКА ШАБЛОНОВ
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Пустой список ДИРЕКТОРИЙ заставит Django искать шаблоны внутри папки приложения (blog/templates)
+        # Пустой список ДИРЕКТОРИЙ заставит Django искать шаблоны внутри папки приложения
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -63,7 +63,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_diary_project.wsgi.application'
 
-# База данных SQLite (из коробки)
+# База данных SQLite
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -79,13 +79,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ЯЗЫКОВЫЕ НАСТРОЙКИ (ИСПРАВЛЕНО: Теперь админка и даты будут на русском)
+# ЯЗЫКОВЫЕ НАСТРОЙКИ
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-# Статические файлы (CSS, JS)
+# Статические файлы
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
