@@ -63,13 +63,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_diary_project.wsgi.application'
 
-# База данных SQLite
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'my_culinary_db',
+        'USER': 'postgres',
+        'PASSWORD': 'root',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
+
 
 # Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
@@ -89,7 +93,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# НАСТРОЙКА КЭШИРОВАНИЯ ЧЕРЕЗ REDIS (
+# настройка кеширования (
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
