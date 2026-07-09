@@ -1,6 +1,4 @@
-"""
-Django settings for my_diary_project project.
-"""
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -66,13 +64,14 @@ WSGI_APPLICATION = 'my_diary_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'my_culinary_db',
-        'USER': 'postgres',
-        'PASSWORD': 'root',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'my_culinary_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
+
 
 
 # Валидация паролей
