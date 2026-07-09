@@ -20,7 +20,8 @@
                 <!-- Проверяем, авторизован ли пользователь на сайте прямо сейчас -->
                                 {% if user.is_authenticated %}
                     <span class="text-white me-3">Привет, <strong>{{ user.username }}</strong>!</span>
-                                    <a href="{% url 'blog:article_create' %}" class="btn btn-sm btn-success me-2">Написать статью</a>
+                                    <a href="{% url 'blog:article_create' %}" class="btn btn-success rounded-pill px-3 fw-bold">Добавить рецепт</a>
+
                                     <form action="{% url 'blog:logout' %}" method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-danger">Выйти</button>
