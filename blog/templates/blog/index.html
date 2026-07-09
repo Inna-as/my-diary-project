@@ -6,17 +6,19 @@
     <!-- Левая колонка: Список статей + Поиск + Сортировка -->
     <div class="col-md-8">
 
-        <!-- ПОИСК (перенесён внутрь левой колонки) -->
+                <!-- ПОИСК  -->
         <div class="mb-4">
             <form method="get" action="{% url 'blog:index' %}" class="d-flex shadow-sm rounded-pill overflow-hidden border">
-                <!-- Сохраняем тег и сортировку, чтобы они не сбросились при поиске -->
+                <!-- Сохраняем категорию и сортировку, чтобы они не сбросились при поиске -->
                 {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.id }}">{% endif %}
                 {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
 
-                <input type="search" name="q" class="form-control border-0 px-4" placeholder="Поиск по статьям или авторам..." value="{{ query }}" aria-label="Search">
-                <button class="btn btn-primary px-4 fw-bold" type="submit">Искать</button>
+                <!--  плейсхолдер и текст на кнопке -->
+                <input type="search" name="q" class="form-control border-0 px-4" placeholder="Найти рецепт или шеф-повара..." value="{{ query }}" aria-label="Search">
+                <button class="btn btn-primary px-4 fw-bold" type="submit">Найти</button>
             </form>
         </div>
+
 
         <!-- Показываем заголовок фильтра, если выбран конкретный тег -->
         {% if selected_tag %}
@@ -26,7 +28,8 @@
                 <a href="{% url 'blog:index' %}" class="btn btn-sm btn-close"></a>
             </div>
         {% else %}
-            <h2 class="mb-4 h4">Все записи</h2>
+            <h2 class="mb-4 h3 fw-bold text-dark">Каталог рецептов</h2>
+
         {% endif %}
 
         <!-- СОРТИРОВКА СТАТЕЙ -->
@@ -100,17 +103,24 @@
 
     </div>
 
-    <!-- Правая колонка: Сайдбар с тегами -->
+    <!-- Правая колонка: Категории блюд -->
     <div class="col-md-4">
         {% cache 60 sidebar_tags %}
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white fw-bold">Популярные теги</div>
+        <div class="card shadow-sm border-primary">
+            <!-- ИСПРАВЛЕНО ДЛЯ ДИПЛОМА: Кулинарный заголовок -->
+            <div class="card-header bg-primary text-white fw-bold">🌾 Категории блюд</div>
             <div class="card-body">
-                {% for tag in popular_tags %}
-                    <a href="{% url 'blog:index' %}?tag={{ tag.id }}{% if sort_by %}&sort={{ sort_by }}{% endif %}" class="badge bg-info text-dark text-decoration-none me-1">{{ tag.name }}</a>
-                {% empty %}
-                    <p class="small text-muted mb-0">Тегов нет.</p>
-                {% endfor %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tag in popular_tags %}
+                        <a href="{% url 'blog:index' %}?tag={{ tag.id }}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
+                           class="badge bg-info text-dark text-decoration-none rounded-pill px-3 py-2">
+                            {{ tag.name }}
+                        </a>
+                    {% empty %}
+
+                        <p class="small text-muted mb-0">Категорий блюд пока нет.</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
         {% endcache %}
