@@ -10,6 +10,11 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+class Meta:
+    verbose_name = "Категория рецепта"
+    verbose_name_plural = "Категории рецептов"
+
+
 
 # 2. ТАБЛИЦА ДЛЯ СТАТЕЙ БЛОГА
 class Article(models.Model):
@@ -32,6 +37,14 @@ class Article(models.Model):
         return self.title
 
 
+
+class Meta:
+    verbose_name = "Рецепт"
+    verbose_name_plural = "Рецепты"
+    ordering = ['-created_at']  # Дефолтная сортировка: сначала новые
+
+
+
 # 3. Таблица коминтариев
 class Comment(models.Model):
     # Привязываем комментарий к определенной статье
@@ -50,3 +63,10 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Комментарий от {self.author.username} к статье {self.article.title}"
+
+
+class Meta:
+    verbose_name = "Комментарий"
+    verbose_name_plural = "Комментарии"
+    ordering = ['created_at']
+

@@ -1,8 +1,30 @@
 from django.contrib import admin
-# Импортируем наши модели из файла models.py текущей папки
-from .models import Tag, Article, Comment
+from .models import Article, Tag, Comment
 
-# Регистрируем каждую модель в админ-панели Django
-admin.site.register(Tag)
-admin.site.register(Article)
-admin.site.register(Comment)
+# Настройка главного заголовка панели управления в браузере
+admin.site.site_header = "Панель управления кулинарным блогом"
+admin.site.index_title = "Каталог рецептов и модерация"
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'created_at')
+    search_fields = ('title', 'content', 'author__username')
+    list_filter = ('created_at',)
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('author', 'article', 'created_at')
+    search_fields = ('content', 'author__username')
+    list_filter = ('created_at',)
+# Принудительная русификация названий таблиц в интерфейсе
+Article._meta.verbose_name = "Рецепт"
+Article._meta.verbose_name_plural = "Рецепты"
+Comment._meta.verbose_name = "Комментарий"
+Comment._meta.verbose_name_plural = "Комментарии"
+Tag._meta.verbose_name = "Категория рецепта"
+Tag._meta.verbose_name_plural = "Категории рецептов"

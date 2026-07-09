@@ -32,16 +32,18 @@ def index_view(request):
     else:
         articles_list = articles_list.order_by('-created_at')  # Сначала новые (по умолчанию)
 
-    # Если передан поисковый запрос
+    # Если передан поисковый запрос (Исправлено для диплома)
     if query:
         words = query.split()
         search_filter = Q()
         for word in words:
-            search_filter &= (
+            # Слово должно быть И в первом наборе условий, И во втором, но внутри набора ищем через ИЛИ
+            word_filter = (
                     Q(title__icontains=word) |
                     Q(content__icontains=word) |
                     Q(author__username__icontains=word)
             )
+            search_filter &= word_filter
         articles_list = articles_list.filter(search_filter)
 
     # Если пользователь кликнул на тег, фильтруем статьи по этому тегу
