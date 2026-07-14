@@ -8,7 +8,8 @@ from django.contrib.auth.decorators import login_required
 from .forms import ArticleForm
 from django.core.cache import cache
 from django.db.models import Count, Q
-from django.contrib.auth.models import User
+from .models import CustomUser
+
 
 
 
@@ -189,14 +190,14 @@ def article_delete_view(request, pk):
 def author_profile_view(request, username):
 
     # Находим автора по его имени, если такого нет — выдаем чистую ошибку 404
-    author = get_object_or_404(User, username=username)
+    author = get_object_or_404(CustomUser, username=username)
 
     # Считаем статистику автора через его связи
-    total_articles = author.articles.count()
-    total_comments = author.comments.count()
+    total_articles = author.article_set.count()
+    total_comments = author.comment_set.count()
 
     # Забираем все статьи этого автора, сортируя от новых к старым
-    author_articles = author.articles.all().order_by('-created_at')
+    author_articles = author.article_set.all().order_by('-created_at')
 
     # Считаем комментарии к карточкам статей на этой странице
     author_articles = author_articles.annotate(comments_count=Count('comments'))

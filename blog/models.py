@@ -1,6 +1,8 @@
 from django.db import models
-# Импортируем готовую таблицу пользователей Django (User).
-from django.contrib.auth.models import User
+
+from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+
 
 
 # 1. ТАБЛИЦА ДЛЯ ТЕГОВ
@@ -24,7 +26,8 @@ class Article(models.Model):
     content = models.TextField(verbose_name="Текст статьи")
 
     # Связь "Один ко многим".
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Автор", related_name='articles')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Автор")
+
 
 
     # Связь "Многие ко многим".
@@ -50,7 +53,8 @@ class Comment(models.Model):
     # Привязываем комментарий к определенной статье
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments', verbose_name="Статья")
     # Привязываем к пользователю, который пишет этот комментарий
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Автор")
+
 
     content = models.TextField(verbose_name="Текст комментария")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата написания")
@@ -69,4 +73,17 @@ class Meta:
     verbose_name = "Комментарий"
     verbose_name_plural = "Комментарии"
     ordering = ['created_at']
+
+class CustomUser(AbstractUser):
+    # Лаконичные поля профиля для диплома
+    bio = models.TextField("О себе", max_length=500, blank=True)
+    avatar = models.ImageField("Фотография профиля", upload_to="avatars/", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+
+    def __str__(self):
+        return self.username
+
 

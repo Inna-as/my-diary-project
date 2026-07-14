@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Article, Tag, Comment
+from .models import Article, Tag, Comment, CustomUser
 
 # Настройка главного заголовка панели управления в браузере
 admin.site.site_header = "Панель управления кулинарным блогом"
@@ -28,3 +28,14 @@ Comment._meta.verbose_name = "Комментарий"
 Comment._meta.verbose_name_plural = "Комментарии"
 Tag._meta.verbose_name = "Категория рецепта"
 Tag._meta.verbose_name_plural = "Категории рецептов"
+
+from django.contrib.auth.admin import UserAdmin
+
+# Профессиональная регистрация кастомного пользователя для диплома
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    # Добавляем отображение наших полей "О себе" и "Аватарка" в админку
+    fieldsets = UserAdmin.fieldsets + (
+        ("Дополнительно для профиля", {"fields": ("bio", "avatar")}),
+    )
+

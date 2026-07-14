@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
+
 # Загружаем переменные из файла .env
 load_dotenv()
 
@@ -102,3 +104,4 @@ CACHES = {
 
 LOGIN_REDIRECT_URL = 'blog:index'
 LOGOUT_REDIRECT_URL = 'blog:index'
+AUTH_USER_MODEL = 'blog.CustomUser'
