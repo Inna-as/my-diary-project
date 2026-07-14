@@ -188,27 +188,36 @@ def article_delete_view(request, pk):
 
  #Страница профиля автора со списком его статей и статистикой.
 def author_profile_view(request, username):
-
-    # Находим автора по его имени, если такого нет — выдаем чистую ошибку 404
     author = get_object_or_404(CustomUser, username=username)
-
-    # Считаем статистику автора через его связи
     total_articles = author.article_set.count()
     total_comments = author.comment_set.count()
-
-    # Забираем все статьи этого автора, сортируя от новых к старым
     author_articles = author.article_set.all().order_by('-created_at')
-
-    # Считаем комментарии к карточкам статей на этой странице
-    author_articles = author_articles.annotate(comments_count=Count('comments'))
-
-    context = {
+    return render(request, 'blog/author_profile.html', {
         'author': author,
         'total_articles': total_articles,
         'total_comments': total_comments,
-        'author_articles': author_articles,
-    }
-    return render(request, 'blog/author_profile.html', context)
+        'author_articles': author_articles
+    })
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+
+    # БЭКЕНД-АНАЛИТИКА: Считаем, сколько рецептов создал именно текущий залогиненный юзер
+    user_recipes_count = request.user.article_set.count()
+
+    # Передаем переменную user_recipes_count внутрь HTML-страницы
+    return render(request, 'blog/profile.html', {
+        'form': form,
+        'user_recipes_count': user_recipes_count
+    })
 
 
 from django.contrib.auth.decorators import login_required
