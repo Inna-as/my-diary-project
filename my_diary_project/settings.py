@@ -92,6 +92,9 @@ USE_TZ = True
 
 # Статические файлы
 STATIC_URL = 'static/'
+# Настройки для загрузки картинок и аватарок на Windows (Для диплома)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # настройка кеширования (

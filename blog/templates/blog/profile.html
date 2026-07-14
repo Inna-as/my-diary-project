@@ -1,0 +1,45 @@
+{% extends 'blog/base.html' %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+
+            <!-- Красивая шапка личного кабинета -->
+            <div class="card-header bg-light p-4 text-center border-0 border-bottom">
+                <h1 class="h3 fw-bold text-dark mb-1">👤 Личный кабинет шеф-повара</h1>
+                <p class="text-muted mb-0 small">Управляйте вашими личными данными, аватаркой и кулинарным досье</p>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- Важно: enctype="multipart/form-data" позволяет форме отправлять файлы картинок в PostgreSQL! -->
+                <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Вывод текущей аватарки, если она загружена в базу -->
+                    <div class="text-center mb-4">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="Аватар" class="rounded-circle border shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                        {% else %}
+                            <div class="d-inline-block rounded-circle bg-light text-muted border text-center pt-3 shadow-sm" style="width: 120px; height: 120px; font-size: 3rem;">
+                                🧑‍🍳
+                            </div>
+                        {% endif %}
+                        <div class="mt-2 small text-muted">Ваш текущий логин: <strong>{{ user.username }}</strong></div>
+                    </div>
+
+                    <!-- Вывод полей нашей формы -->
+                    {% bootstrap_form form %}
+
+                    <!-- Кнопки управления -->
+                    <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+                        <a href="{% url 'blog:index' %}" class="btn btn-light rounded-pill px-4 fw-bold border text-secondary">На главную</a>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">💾 Сохранить изменения</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

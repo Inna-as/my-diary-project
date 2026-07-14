@@ -211,3 +211,22 @@ def author_profile_view(request, username):
     return render(request, 'blog/author_profile.html', context)
 
 
+from django.contrib.auth.decorators import login_required
+from .forms import UserProfileForm
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        # request.FILES обязательно нужен, чтобы поймать файл аватарки!
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+
+    return render(request, 'blog/profile.html', {'form': form})
+
+
+
