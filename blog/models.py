@@ -35,6 +35,7 @@ class Article(models.Model):
 
     # Само сохраняет точную дату и время создания статьи
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата публикации")
+    is_published = models.BooleanField("Одобрено админом", default=False)
 
     def __str__(self):
         return self.title

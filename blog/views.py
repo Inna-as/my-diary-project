@@ -22,8 +22,9 @@ def index_view(request):
     tag_id = request.GET.get('tag', '')
     sort_by = request.GET.get('sort', 'new')
 
-    # Базовый QuerySet: агрегируем количество комментариев к каждой статье через Count
-    articles_list = Article.objects.annotate(comments_count=Count('comments'))
+
+
+    articles_list = Article.objects.filter(is_published=True).annotate(comments_count=Count('comments'))
 
     #  Логика переключения сортировки
     if sort_by == 'old':

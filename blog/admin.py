@@ -5,11 +5,25 @@ from .models import Article, Tag, Comment, CustomUser
 admin.site.site_header = "Панель управления кулинарным блогом"
 admin.site.index_title = "Каталог рецептов и модерация"
 
+
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'created_at')
+
+    list_display = ('title', 'author', 'created_at', 'is_published')
+
+    list_editable = ('is_published',)
+
     search_fields = ('title', 'content', 'author__username')
-    list_filter = ('created_at',)
+
+    list_filter = ('created_at', 'is_published')
+
+    actions = ['approve_recipes']
+
+    @admin.action(description="🔥 Одобрить и опубликовать выбранные рецепты")
+    def approve_recipes(self, request, queryset):
+        updated_count = queryset.update(is_published=True)
+        self.message_user(request, f"Успешно одобрено и отправлено на сайт рецептов: {updated_count}.")
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
