@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.paginator import Paginator
 from .models import Article, Tag
-from .forms import CommentForm
+from .forms import CommentForm,CustomUserCreationForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -109,20 +109,19 @@ def article_detail_view(request, pk):
 
 
 def register_view(request):
-
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()  # Создаем пользователя в базе данных
-            login(request, user)  # Сразу автоматически авторизуем его на сайте
-            return redirect('blog:index')  # Уводим на главную страницу
+            user = form.save()
+            login(request, user)
+            return redirect('blog:index')
     else:
-        form = UserCreationForm()  # Если просто зашли — показываем пустую форму
+        form = CustomUserCreationForm()
 
     return render(request, 'blog/register.html', {'form': form})
 
-
-@login_required  # Перенаправит гостя на вход, если он попытается зайти по ссылке
+@login_required
 def article_create_view(request):
 
     #Страница создания новой статьи.

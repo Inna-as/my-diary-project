@@ -1,5 +1,7 @@
 from django import forms
 from .models import Comment
+from django.contrib.auth.forms import UserCreationForm
+
 
 # Форма для ввода комментариев
 class CommentForm(forms.ModelForm):
@@ -27,3 +29,9 @@ class UserProfileForm(forms.ModelForm):
             'bio': forms.Textarea(attrs={'class': 'form-control rounded-3 p-3', 'rows': 4}),
             'avatar': forms.FileInput(attrs={'class': 'form-control'}),
         }
+from .models import CustomUser
+
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('username', 'email') # Поля, которые будут в форме регистрации
