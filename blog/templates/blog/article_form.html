@@ -1,67 +1,44 @@
 {% extends 'blog/base.html' %}
-{% load django_bootstrap5 %}
+{% load static %}
 
 {% block content %}
-<div class="row mt-5">
-    <div class="col-md-8 mx-auto">
-        <!-- Белая карточка с мягкой тенью и скруглёнными углами Bootstrap -->
-        <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="mb-4">{% if form.instance.pk %}Редактировать{% else %}Создать{% endif %} рецепт</h1>
 
-            <!-- Верхняя аккуратная плашка карточки -->
-            <div class="card-header bg-light p-4 text-center border-0 border-bottom">
-                <h1 class="h3 fw-bold text-dark mb-1">🍳 Поделиться новым рецептом</h1>
-                <p class="text-muted mb-0 small">Расскажите кулинарному дневнику секреты вашего фирменного блюда</p>
-            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
 
-            <div class="card-body p-4">
-                <form method="post" action="." class="needs-validation" novalidate>
-                    {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.title.label }}</label>
+                    {{ form.title }}
+                </div>
 
-                    <!-- Вывод скрытых полей или общих ошибок формы -->
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                    {% endif %}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                </div>
 
-                    <!-- Поле 1: Название блюда -->
-                    <div class="mb-4">
-                        <label for="{{ form.title.id_for_label }}" class="form-label fw-bold text-dark mb-1">🥗 Название блюда</label>
-                        <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}"
-                               class="form-control rounded-3 p-2 border-light-subtle shadow-sm-focus"
-                               placeholder="Например: Паста Карбонара по-домашнему"
-                               required value="{{ form.title.value|default_if_none:'' }}">
-                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.category.label }}</label>
+                    {{ form.category }}
+                </div>
 
-                    <!-- Поле 2: Текст рецепта -->
-                    <div class="mb-4">
-                        <label for="{{ form.content.id_for_label }}" class="form-label fw-bold text-dark mb-1">📝 Ингредиенты и шаги приготовления</label>
-                        <textarea name="{{ form.content.name }}" id="{{ form.content.id_for_label }}" rows="8"
-                                  class="form-control rounded-3 p-3 border-light-subtle shadow-sm-focus"
-                                  placeholder="1. Подготовьте продукты...&#10;2. Нарежьте ингредиенты..."
-                                  required>{{ form.content.value|default_if_none:'' }}</textarea>
-                        {% if form.content.errors %}<div class="text-danger small mt-1">{{ form.content.errors }}</div>{% endif %}
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.image.label }}</label>
+                    {{ form.image }}
+                </div>
 
-                    <!-- Поле 3: Категория блюда -->
-                    <div class="mb-4">
-                        <label for="{{ form.tags.id_for_label }}" class="form-label fw-bold text-dark mb-1">🌾 Категория блюда</label>
-                        <select name="{{ form.tags.name }}" id="{{ form.tags.id_for_label }}"
-                                class="form-select rounded-3 p-2 border-light-subtle shadow-sm-focus" multiple required>
-                            {% for choice in form.fields.tags.choices %}
-                                <option value="{{ choice.0 }}" {% if choice.0 in form.tags.value %}selected{% endif %}>{{ choice.1 }}</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text text-muted small mt-1">💡 Зажмите Ctrl, чтобы выбрать несколько категорий сразу.</div>
-                        {% if form.tags.errors %}<div class="text-danger small mt-1">{{ form.tags.errors }}</div>{% endif %}
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.instructions.label }}</label>
+                    {{ form.instructions }}
+                </div>
 
-                    <!-- Кнопки управления внизу формы -->
-                    <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
-                        <a href="{% url 'blog:index' %}" class="btn btn-light rounded-pill px-4 fw-bold border text-secondary">Отмена</a>
-                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">🚀 Опубликовать рецепт</button>
-                    </div>
-                </form>
-            </div>
+                <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
+                    {% if form.instance.pk %}Сохранить{% else %}Опубликовать{% endif %}
+                </button>
+            </form>
         </div>
     </div>
 </div>

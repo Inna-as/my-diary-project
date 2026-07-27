@@ -1,0 +1,236 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">🧊 Умный Холодильник</h1>
+        <p class="lead text-muted">Выберите продукты, которые у вас есть, и мы подскажем, что приготовить!</p>
+    </div>
+
+    <!-- ФОРМА С ВВОДОМ ТЕКСТА ЧЕРЕЗ ЗАПЯТУЮ -->
+    <div class="row mb-4">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post" action="{% url 'blog:fridge_results' %}">
+                        {% csrf_token %}
+
+                        <!-- ВЫБОР КАТЕГОРИИ БЛЮДА -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Категория блюда (необязательно)</label>
+                                <select class="form-select" name="category">
+                                    <option value="">Все категории</option>
+                                    <option value="dessert">🍰 Десерт</option>
+                                    <option value="appetizer">🥗 Закуска</option>
+                                    <option value="first">🍲 Первые блюда</option>
+                                    <option value="second">🍖 Вторые блюда</option>
+                                    <option value="snack">🍿 Перекус</option>
+                                    <option value="drink">🥤 Напиток</option>
+                                    <option value="salad">🥙 Салат</option>
+                                    <option value="soup">🍲 Суп</option>
+                                    <option value="main">🍽️ Основное блюдо</option>
+                                    <option value="baking">🥐 Выпечка</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ПОЛЕ ВВОДА ПРОДУКТОВ ЧЕРЕЗ ЗАПЯТУЮ -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="ingredientsInput" class="form-label fw-bold">
+                                    Введите продукты через запятую
+                                </label>
+                                <input
+                                    type="text"
+                                    class="form-control form-control-lg rounded-3 p-3"
+                                    id="ingredientsInput"
+                                    name="ingredients_text"
+                                    placeholder='Например: курица, помидоры, сметана, гречка'
+                                    autocomplete="off"
+                                >
+                                <div class="form-text">
+                                    💡 Введите названия продуктов, которые у вас есть, через запятую
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Кнопка поиска -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+                                🔍 Найти рецепт
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- РАЗДЕЛИТЕЛЬ -->
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <span class="text-muted fw-bold">— ИЛИ —</span>
+        </div>
+    </div>
+
+    <!-- АККОРДЕОН С КАТЕГОРИЯМИ ПРОДУКТОВ (БЕЗ ДУБЛИРУЮЩЕЙ КАТЕГОРИИ БЛЮДА) -->
+    {% if categories %}
+    <form method="post" action="{% url 'blog:fridge_results' %}">
+        {% csrf_token %}
+
+        <!-- АККОРДЕОН -->
+        <div class="accordion" id="fridgeAccordion">
+            {% for category in categories %}
+            <div class="accordion-item mb-2">
+                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                    <button
+                        class="accordion-button collapsed fw-bold"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse{{ forloop.counter }}"
+                        aria-expanded="false"
+                        aria-controls="collapse{{ forloop.counter }}"
+                    >
+                        <span class="badge bg-primary rounded-pill me-3">{{ category.ingredients.count }}</span>
+                        {{ category.name }}
+                    </button>
+                </h2>
+                <div
+                    id="collapse{{ forloop.counter }}"
+                    class="accordion-collapse collapse"
+                    aria-labelledby="heading{{ forloop.counter }}"
+                    data-bs-parent="#fridgeAccordion"
+                >
+                    <div class="accordion-body">
+                        <div class="row">
+                            {% for ingredient in category.ingredients.all %}
+                            <div class="col-md-4 col-sm-6 mb-2">
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="ingredients"
+                                        value="{{ ingredient.id }}"
+                                        id="ing_{{ ingredient.id }}"
+                                    >
+                                    <label class="form-check-label" for="ing_{{ ingredient.id }}">
+                                        {{ ingredient.name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Кнопка отправки -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
+                🔍 Заглянуть в холодильник
+            </button>
+        </div>
+    </form>
+
+    {% else %}
+    <div class="text-center py-5">
+        <div class="alert alert-warning shadow">
+            <h4>🧊 В холодильнике пусто</h4>
+            <p>Добавьте категории и ингредиенты в базу данных</p>
+            <a href="{% url 'blog:index' %}" class="btn btn-primary mt-3">На главную</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Автозаполнение продуктов при вводе
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('ingredientsInput');
+    if (!input) return;
+
+    // Получаем список всех ингредиентов из базы
+    const ingredients = [
+        {% for category in categories %}
+            {% for ingredient in category.ingredients.all %}
+                "{{ ingredient.name }}",
+            {% endfor %}
+        {% endfor %}
+    ];
+
+    // Функция для получения текущего вводимого слова
+    function getCurrentWord() {
+        const value = input.value;
+        const cursorPosition = input.selectionStart;
+        const textBeforeCursor = value.slice(0, cursorPosition);
+        const words = textBeforeCursor.split(',');
+        return words[words.length - 1].trim().toLowerCase();
+    }
+
+    // Создаем контейнер для автозаполнения
+    const autocompleteContainer = document.createElement('div');
+    autocompleteContainer.className = 'autocomplete-items';
+    autocompleteContainer.style.cssText = 'position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; border-radius: 0 0 8px 8px; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    input.parentNode.style.position = 'relative';
+    input.parentNode.appendChild(autocompleteContainer);
+
+    // Показываем подсказки при вводе
+    input.addEventListener('input', function() {
+        const currentWord = getCurrentWord();
+        autocompleteContainer.innerHTML = '';
+
+        if (currentWord.length < 1) {
+            autocompleteContainer.style.display = 'none';
+            return;
+        }
+
+        // Ищем совпадения
+        const matches = ingredients.filter(ing =>
+            ing.toLowerCase().includes(currentWord)
+        ).slice(0, 10);
+
+        if (matches.length === 0) {
+            autocompleteContainer.style.display = 'none';
+            return;
+        }
+
+        matches.forEach(match => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.style.cssText = 'padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;';
+            div.innerHTML = `<strong>${match}</strong>`;
+
+            div.addEventListener('click', function() {
+                const value = input.value;
+                const cursorPosition = input.selectionStart;
+                const textBeforeCursor = value.slice(0, cursorPosition);
+                const textAfterCursor = value.slice(cursorPosition);
+
+                const words = textBeforeCursor.split(',');
+                words[words.length - 1] = ' ' + match + ', ';
+                const newValue = words.join(',') + textAfterCursor;
+
+                input.value = newValue;
+                input.focus();
+                autocompleteContainer.style.display = 'none';
+            });
+
+            autocompleteContainer.appendChild(div);
+        });
+
+        autocompleteContainer.style.display = 'block';
+    });
+
+    // Скрываем подсказки при клике вне поля
+    document.addEventListener('click', function(e) {
+        if (e.target !== input) {
+            autocompleteContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

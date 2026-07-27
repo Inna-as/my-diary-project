@@ -1,27 +1,42 @@
 from django import forms
-from .models import Comment
 from django.contrib.auth.forms import UserCreationForm
+from .models import Article, CustomUser
 
 
-# Форма для ввода комментариев
-class CommentForm(forms.ModelForm):
-    class Meta:
-        model = Comment
-        fields = ['content']  # Пользователь будет заполнять только поле текста
-
-from .models import Article
-
+# ============ ФОРМА ДЛЯ СОЗДАНИЯ/РЕДАКТИРОВАНИЯ РЕЦЕПТА (ОБНОВЛЕНО) ============
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
-        fields = ['title', 'content', 'tags'] # Поля, которые пользователь заполняет сам
+        fields = ['title', 'description', 'instructions', 'category', 'image']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'Название рецепта'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control rounded-3 p-3',
+                'rows': 3,
+                'placeholder': 'Краткое описание блюда (можно оставить пустым)'
+            }),
+            'instructions': forms.Textarea(attrs={
+                'class': 'form-control rounded-3 p-3',
+                'rows': 8,
+                'placeholder': 'Подробное описание приготовления...'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-select rounded-3'
+            }),
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+        }
 
-from .models import CustomUser
 
+# ============ ФОРМА ДЛЯ ПРОФИЛЯ ============
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        # Поля, которые пользователь сможет редактировать прямо на сайте
         fields = ['first_name', 'last_name', 'bio', 'avatar']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control rounded-pill px-3'}),
@@ -29,9 +44,76 @@ class UserProfileForm(forms.ModelForm):
             'bio': forms.Textarea(attrs={'class': 'form-control rounded-3 p-3', 'rows': 4}),
             'avatar': forms.FileInput(attrs={'class': 'form-control'}),
         }
-from .models import CustomUser
 
+
+# ============ ФОРМА ДЛЯ РЕГИСТРАЦИИ ============
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ('username', 'email') # Поля, которые будут в форме регистрации
+        fields = ('username', 'email')
+
+
+# ============ НОВЫЕ ФОРМЫ "УМНЫЙ ХОЛОДИЛЬНИК" ============
+
+# Форма для выбора ингредиентов в холодильнике
+class FridgeForm(forms.Form):
+    ingredients = forms.ModelMultipleChoiceField(
+        queryset=None,  # Заполняется в view
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Выберите продукты, которые у вас есть'
+    )
+
+
+# Форма для калькулятора порций
+class PortionsForm(forms.Form):
+    portions = forms.IntegerField(
+        min_value=1,
+        max_value=10,
+        initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': 1,
+            'max': 10,
+            'value': 1
+        }),
+        label='Количество порций'
+    )
+
+
+# Форма для добавления ингредиента в рецепт (для админки или фичи редактирования)
+class RecipeIngredientForm(forms.Form):
+    ingredient = forms.ModelChoiceField(
+        queryset=None,  # Заполняется в view
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Ингредиент'
+    )
+    amount = forms.DecimalField(
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Количество',
+            'step': 0.01
+        }),
+        label='Количество'
+    )
+    unit = forms.CharField(
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Единица измерения (г, шт, мл и т.д.)'
+        }),
+        label='Единица измерения'
+    )
+
+
+# Форма для поиска рецептов по ингредиентам
+class RecipeSearchForm(forms.Form):
+    search_query = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control rounded-pill px-3',
+            'placeholder': 'Поиск по названию...'
+        }),
+        label='Поиск'
+    )

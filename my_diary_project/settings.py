@@ -1,9 +1,6 @@
-
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
-
 
 # Загружаем переменные из файла .env
 load_dotenv()
@@ -14,10 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 
-
 ALLOWED_HOSTS = []
 
-# Регистрация приложений
+# ==================== РЕГИСТРАЦИЯ ПРИЛОЖЕНИЙ ====================
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -28,7 +25,6 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'blog',  #  приложение блога
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -43,7 +39,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'my_diary_project.urls'
 
-# НАСТРОЙКА ШАБЛОНОВ
+# ==================== НАСТРОЙКА ШАБЛОНОВ ====================
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -63,6 +60,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_diary_project.wsgi.application'
 
+# ==================== НАСТРОЙКА БАЗЫ ДАННЫХ ====================
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -74,9 +73,8 @@ DATABASES = {
     }
 }
 
+# ==================== ВАЛИДАЦИЯ ПАРОЛЕЙ ====================
 
-
-# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -84,26 +82,46 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ЯЗЫКОВЫЕ НАСТРОЙКИ
+# ==================== ЯЗЫКОВЫЕ НАСТРОЙКИ ====================
+
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-# Статические файлы
-STATIC_URL = 'static/'
-# Настройки для загрузки картинок и аватарок на Windows (Для диплома)
-MEDIA_URL = 'media/'
+# ==================== СТАТИЧЕСКИЕ ФАЙЛЫ ====================
+
+# URL-префикс для статических файлов (со слешем в начале!)
+STATIC_URL = '/static/'
+
+# Где Django ищет статические файлы внутри проекта (в папке static)
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Куда Django соберет статические файлы для продакшена
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# ==================== МЕДИА ФАЙЛЫ ====================
+
+# URL-префикс для медиафайлов (со слешем в начале!)
+MEDIA_URL = '/media/'
+
+# Где хранить загруженные медиафайлы
 MEDIA_ROOT = BASE_DIR / 'media'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# настройка кеширования (
+# ==================== НАСТРОЙКА КЕШИРОВАНИЯ ====================
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "unique-snowflake",
     }
 }
+
+# ==================== НАСТРОЙКИ АВТОРИЗАЦИИ ====================
 
 LOGIN_REDIRECT_URL = 'blog:index'
 LOGOUT_REDIRECT_URL = 'blog:index'

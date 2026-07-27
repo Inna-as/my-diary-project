@@ -10,7 +10,7 @@ urlpatterns = [
     # Главная страница
     path('', views.index_view, name='index'),
 
-    # Страница статьи
+    # Страница статьи/рецепта
     path('article/<int:pk>/', views.article_detail_view, name='article_detail'),
 
     # Создание новой статьи
@@ -32,6 +32,27 @@ urlpatterns = [
     # Регистрация и профиль
     path('register/', views.register_view, name='register'),
     path('profile/', views.profile_view, name='profile'),
+
+    # ==================== УМНЫЙ ХОЛОДИЛЬНИК ====================
+
+    # Главная страница "Умный Холодильник"
+    path('fridge/', views.fridge_view, name='fridge'),
+
+    # Результаты поиска (сессия)
+    path('fridge/results/', views.fridge_results_view, name='fridge_results'),
+
+    # Поиск рецептов (JSON - AJAX)
+    path('fridge/search/', views.fridge_search_view, name='fridge_search'),
+
+    # ==================== ИЗБРАННОЕ ====================
+
+    # Добавление/удаление рецепта из избранного (JSON - AJAX)
+    path('favorite/<int:recipe_id>/', views.favorite_view, name='favorite'),
+
+    # Список всех избранных рецептов пользователя
+    path('favorites/', views.favorites_view, name='favorites'),
+    # AJAX - сохранить выбранные ингредиенты
+    path('fridge/save/', views.fridge_save_view, name='fridge_save'),
 ]
 
 # Обслуживание медиафайлов в режиме DEBUG
