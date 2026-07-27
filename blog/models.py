@@ -1,90 +1,75 @@
 from django.db import models
-
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 
-
-
-# 1. ТАБЛИЦА ДЛЯ ТЕГОВ
+# 1. Таблица для тегов
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="Название тега")
 
     def __str__(self):
         return self.name
 
-class Meta:
-    verbose_name = "Категория рецепта"
-    verbose_name_plural = "Категории рецептов"
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
 
 
-
-# 2. ТАБЛИЦА ДЛЯ СТАТЕЙ БЛОГА
+# 2. Таблица для рецептов (статей блога)
 class Article(models.Model):
     # Заголовок статьи — короткая строка
     title = models.CharField(max_length=200, verbose_name="Заголовок статьи")
-    # Текстовое поле для огромных текстов
+    # Основной текст статьи
     content = models.TextField(verbose_name="Текст статьи")
-
-    # Связь "Один ко многим".
+    # Связь "один ко многим" (автор)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Автор")
-
-
-
-    # Связь "Многие ко многим".
+    # Связь "многие ко многим" с тегами
     tags = models.ManyToManyField(Tag, blank=True, verbose_name="Теги")
-
-    # Само сохраняет точную дату и время создания статьи
+    # Время создания
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата публикации")
+    # Статус публикации
     is_published = models.BooleanField("Одобрено админом", default=False)
 
     def __str__(self):
         return self.title
 
+    class Meta:
+        verbose_name = "Рецепт"
+        verbose_name_plural = "Рецепты"
+        ordering = ['-created_at']
 
 
-class Meta:
-    verbose_name = "Рецепт"
-    verbose_name_plural = "Рецепты"
-    ordering = ['-created_at']  # Дефолтная сортировка: сначала новые
-
-
-
-# 3. Таблица коминтариев
+# 3. Таблица комментариев
 class Comment(models.Model):
-    # Привязываем комментарий к определенной статье
+    # Связь с рецептом/статьей
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments', verbose_name="Статья")
-    # Привязываем к пользователю, который пишет этот комментарий
+    # Связь с автором комментария
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Автор")
-
-
+    # Текст комментария
     content = models.TextField(verbose_name="Текст комментария")
+    # Время написания
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата написания")
-
-    # Древовидность-позволяет комментарию ссылаться на другой комментарий в этой же таблице,
-    # за счет чего и создается цепочка «вопрос — ответ» любой вложенности.
-
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies',
-                               verbose_name="Родительский комментарий")
+    # Вложенные комментарии (цепочка)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies', verbose_name="Родительский комментарий")
 
     def __str__(self):
         return f"Комментарий от {self.author.username} к статье {self.article.title}"
 
-
-class Meta:
-    verbose_name = "Комментарий"
-    verbose_name_plural = "Комментарии"
-    ordering = ['created_at']
-
-class CustomUser(AbstractUser):
-    # Лаконичные поля профиля для диплома
-    bio = models.TextField("О себе", max_length=500, blank=True)
-    avatar = models.ImageField("Фотография профиля", upload_to="avatars/", blank=True, null=True)
-
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        verbose_name = "Комментарий"
+        verbose_name_plural = "Комментарии"
+        ordering = ['created_at']
+
+
+# Пользовательская модель
+class CustomUser(AbstractUser):
+    # Биография
+    bio = models.TextField("О себе", blank=True)
+    # Аватарка профиля
+    avatar = models.ImageField("Фотография профиля", upload_to="avatars/", blank=True, null=True)
 
     def __str__(self):
         return self.username
 
-
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"

@@ -1,7 +1,8 @@
 from django.urls import path
-# Импортируем готовые окна авторизации из самого Django
 from django.contrib.auth.views import LoginView, LogoutView
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 app_name = 'blog'
 
@@ -11,18 +12,28 @@ urlpatterns = [
 
     # Страница статьи
     path('article/<int:pk>/', views.article_detail_view, name='article_detail'),
-    #  Путь для создания статьи
+
+    # Создание новой статьи
     path('article/new/', views.article_create_view, name='article_create'),
-#  Ссылки на редактирование и удаление
+
+    # Редактирование статьи
     path('article/<int:pk>/edit/', views.article_update_view, name='article_update'),
+
+    # Удаление статьи
     path('article/<int:pk>/delete/', views.article_delete_view, name='article_delete'),
-    #  Ссылка на профиль автора (принимает имя пользователя)
+
+    # Страница профиля автора (по имени пользователя)
     path('author/<str:username>/', views.author_profile_view, name='author_profile'),
 
-    #   адреса для входа и выхода на сайт
+    # Войти и выйти из аккаунта
     path('login/', LoginView.as_view(template_name='blog/login.html'), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
+
+    # Регистрация и профиль
     path('register/', views.register_view, name='register'),
     path('profile/', views.profile_view, name='profile'),
-
 ]
+
+# Обслуживание медиафайлов в режиме DEBUG
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

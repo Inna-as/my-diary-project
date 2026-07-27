@@ -34,7 +34,7 @@ def index_view(request):
     else:
         articles_list = articles_list.order_by('-created_at')  # Сначала новые (по умолчанию)
 
-    # Если передан поисковый запрос (Исправлено для диплома)
+    # Если передан поисковый запрос
     if query:
         words = query.split()
         search_filter = Q()
@@ -220,7 +220,7 @@ def profile_view(request):
     })
 
 
-from django.contrib.auth.decorators import login_required
+
 from .forms import UserProfileForm
 
 
