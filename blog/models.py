@@ -91,6 +91,7 @@ class Article(models.Model):
         blank=True,
         null=True
     )
+    likes_count = models.PositiveIntegerField(default=0, verbose_name='Количество лайков')
 
     def __str__(self):
         return self.title
@@ -175,8 +176,29 @@ class FavoriteRecipe(models.Model):
 class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    # Древовидные комментарии - поле parent для ответов
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        verbose_name='Ответ на'
+    )
+
     text = models.TextField(verbose_name='Текст комментария')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    # Лайки на комментарии
+    likes = models.ManyToManyField(
+        CustomUser,
+        related_name='comment_likes',
+        blank=True,
+        verbose_name='Лайки'
+    )
+
+    likes_count = models.PositiveIntegerField(default=0, verbose_name='Количество лайков')
 
     class Meta:
         ordering = ['-created_at']
@@ -185,3 +207,18 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'{self.author.username}: {self.text[:50]}'
+
+    @property
+    def is_reply(self):
+        """Является ли этот комментарий ответом"""
+        return self.parent is not None
+
+    @property
+    def depth(self):
+        """Глубина комментария в дереве (сколько уровней ответов)"""
+        depth = 0
+        parent = self.parent
+        while parent:
+            depth += 1
+            parent = parent.parent
+        return depth

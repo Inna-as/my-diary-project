@@ -17,14 +17,15 @@ def index_view(request):
     query = request.GET.get('q', '').strip()
     sort_by = request.GET.get('sort', 'new')
 
-    articles_list = Article.objects.all()
+    articles_list = Article.objects.annotate(
+        favorites_count=Count('favored_by'),
+        comments_count=Count('comments')
+    )
 
     if sort_by == 'old':
         articles_list = articles_list.order_by('created_at')
     elif sort_by == 'popular':
-        articles_list = articles_list.annotate(
-            favorites_count=Count('favored_by')
-        ).order_by('-favorites_count', '-created_at')
+        articles_list = articles_list.order_by('-favorites_count', '-created_at')
     else:
         articles_list = articles_list.order_by('-created_at')
 
@@ -51,11 +52,13 @@ def index_view(request):
     return render(request, 'blog/index.html', context)
 
 
-# ============ ДЕТАЛЬНАЯ СТРАНИЦА РЕЦЕПТА ============
+# ============ ДЕТАЛЬНАЯ СТРАНИЦА РЕЦЕПТА (ОБНОВЛЕНО) ============
 def article_detail_view(request, pk):
-    article = get_object_or_404(Article, pk=pk)
+    article = get_object_or_404(
+        Article.objects.annotate(comments_count=Count('comments')),
+        pk=pk
+    )
     recipe_ingredients = article.recipe_ingredients.select_related('ingredient', 'ingredient__category').all()
-
     portions = int(request.GET.get('portions', 1))
 
     ingredients_with_amounts = []
@@ -77,17 +80,40 @@ def article_detail_view(request, pk):
     if request.user.is_authenticated:
         can_edit = (request.user == article.author) or request.user.is_superuser
 
-    comments = article.comments.select_related('author').order_by('-created_at')
+    # Загружаем комментарии с ответами (2 уровня)
+    comments = article.comments.select_related('author', 'parent').prefetch_related('replies__author').order_by('-created_at')
 
+    # Обработка создания комментария или ответа
     if request.method == 'POST' and 'comment_text' in request.POST:
         if request.user.is_authenticated:
             comment_text = request.POST.get('comment_text', '').strip()
+            parent_id = request.POST.get('parent_id', '').strip()
+
             if comment_text:
-                Comment.objects.create(
-                    article=article,
-                    author=request.user,
-                    text=comment_text
-                )
+                # Если есть parent_id - создаём ответ на комментарий
+                if parent_id:
+                    try:
+                        parent_comment = Comment.objects.get(id=parent_id)
+                        Comment.objects.create(
+                            article=article,
+                            author=request.user,
+                            text=comment_text,
+                            parent=parent_comment  # <-- Добавляем связь с родительским комментарием
+                        )
+                    except Comment.DoesNotExist:
+                        # Если родительский комментарий не найден - создаём обычный комментарий
+                        Comment.objects.create(
+                            article=article,
+                            author=request.user,
+                            text=comment_text
+                        )
+                else:
+                    # Обычный комментарий
+                    Comment.objects.create(
+                        article=article,
+                        author=request.user,
+                        text=comment_text
+                    )
                 return redirect('blog:article_detail', pk=pk)
 
     likes_count = article.favored_by.count()
@@ -103,7 +129,6 @@ def article_detail_view(request, pk):
         'likes_count': likes_count,
     }
     return render(request, 'blog/article_detail.html', context)
-
 
 # ============ РЕГИСТРАЦИЯ ============
 def register_view(request):
@@ -125,13 +150,14 @@ def article_create_view(request):
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES)
         if form.is_valid():
-            article = form.save()
+            article = form.save(commit=False)  # Не сохраняем сразу в БД
+            article.author = request.user       # Добавляем автора
+            article.save()                      # Теперь сохраняем
             return redirect('blog:article_detail', pk=article.pk)
     else:
         form = ArticleForm()
 
     return render(request, 'blog/article_form.html', {'form': form})
-
 
 # ============ РЕДАКТИРОВАНИЕ РЕЦЕПТА ============
 @login_required

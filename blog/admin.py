@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, FoodCategory, Ingredient, Article,
-    RecipeIngredient, IngredientSubstitution, FavoriteRecipe
+    RecipeIngredient, IngredientSubstitution, FavoriteRecipe, Comment
 )
 
 # Настройка главного заголовка панели управления в браузере
@@ -53,7 +53,22 @@ class FavoriteRecipeAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'recipe__title')
 
 
-# ============ КУСТОМНЫЙ ПОЛЬЗОВАТЕЛЬ (сохраняем существующий) ============
+# ============ АДМИНКА ДЛЯ КОММЕНТАРИЕВ ============
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'author', 'article', 'text_preview', 'parent', 'created_at', 'likes_count']
+    list_filter = ['created_at', 'likes_count', 'article']
+    search_fields = ['text', 'author__username', 'article__title']
+    readonly_fields = ['created_at', 'likes_count']
+    ordering = ['-created_at']
+
+    def text_preview(self, obj):
+        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
+
+    text_preview.short_description = 'Текст'
+
+
+# ============ КАСТОМНЫЙ ПОЛЬЗОВАТЕЛЬ ============
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -79,3 +94,6 @@ IngredientSubstitution._meta.verbose_name_plural = "Замены ингреди�
 
 FavoriteRecipe._meta.verbose_name = "Избранный рецепт"
 FavoriteRecipe._meta.verbose_name_plural = "Избранные рецепты"
+
+Comment._meta.verbose_name = "Комментарий"
+Comment._meta.verbose_name_plural = "Комментарии"

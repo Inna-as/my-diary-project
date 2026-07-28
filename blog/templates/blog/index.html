@@ -4,7 +4,7 @@
 {% block content %}
 <div class="row">
     <!-- Левая колонка: Список статей + Поиск + Сортировка -->
-    <div class="col-md-8">
+    <div class="col-md-12">  <!-- ИЗМЕНЕНО: было col-md-8, теперь col-md-12 -->
 
                 <!-- ПОИСК  -->
         <div class="mb-4">
@@ -51,12 +51,13 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h2><a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">{{ article.title }}</a></h2>
-                                         <p class="text-muted extra-small" style="font-size: 0.85rem;">
-                        <!--   имя автора ведет в его профиль -->
-                        Автор: <a href="{% url 'blog:author_profile' article.author.username %}" class="text-decoration-none fw-bold text-dark">{{ article.author.username }}</a> |
-                        Дата: {{ article.created_at|date:"d.m.Y" }} |
-                        <span class="text-primary">💬 Комментарии: {{ article.comments_count }}</span>
-                    </p>
+                                        <p class="text-muted extra-small" style="font-size: 0.85rem;">
+    <!--   имя автора ведет в его профиль -->
+    Автор: <a href="{% url 'blog:author_profile' article.author.username %}" class="text-decoration-none fw-bold text-dark">{{ article.author.username }}</a> |
+    Дата: {{ article.created_at|date:"d.m.Y" }} |
+    <span class="text-danger">❤️  {{ article.favorites_count }}</span> |
+    <span class="text-primary">💬 Комментарии: {{ article.comments_count }}</span>
+</p>
 
 
                     <p class="card-text text-secondary">{{ article.content|truncatewords:20 }}</p>
@@ -101,29 +102,6 @@
             </div>
         {% endif %}
 
-    </div>
-
-    <!-- Правая колонка: Категории блюд -->
-    <div class="col-md-4">
-        {% cache 60 sidebar_tags %}
-        <div class="card shadow-sm border-primary">
-            <!-- Кулинарный заголовок -->
-            <div class="card-header bg-primary text-white fw-bold">🌾 Категории блюд</div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    {% for tag in popular_tags %}
-                        <a href="{% url 'blog:index' %}?tag={{ tag.id }}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if query %}&q={{ query }}{% endif %}"
-                           class="badge bg-info text-dark text-decoration-none rounded-pill px-3 py-2">
-                            {{ tag.name }}
-                        </a>
-                    {% empty %}
-
-                        <p class="small text-muted mb-0">Категорий блюд пока нет.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endcache %}
     </div>
 
 </div>

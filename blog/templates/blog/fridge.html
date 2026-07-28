@@ -75,7 +75,7 @@
         </div>
     </div>
 
-    <!-- АККОРДЕОН С КАТЕГОРИЯМИ ПРОДУКТОВ (БЕЗ ДУБЛИРУЮЩЕЙ КАТЕГОРИИ БЛЮДА) -->
+    <!-- ФОРМА ВЫБОРА ЧЕРЕЗ КАТЕГОРИИ (АККОРДЕОН) -->
     {% if categories %}
     <form method="post" action="{% url 'blog:fridge_results' %}">
         {% csrf_token %}
@@ -103,24 +103,27 @@
                     aria-labelledby="heading{{ forloop.counter }}"
                     data-bs-parent="#fridgeAccordion"
                 >
-                    <div class="accordion-body">
-                        <div class="row">
-                            {% for ingredient in category.ingredients.all %}
-                            <div class="col-md-4 col-sm-6 mb-2">
-                                <div class="form-check">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        name="ingredients"
-                                        value="{{ ingredient.id }}"
-                                        id="ing_{{ ingredient.id }}"
-                                    >
-                                    <label class="form-check-label" for="ing_{{ ingredient.id }}">
-                                        {{ ingredient.name }}
-                                    </label>
+                    <div class="accordion-body p-3">
+                        <!-- Контейнер с прокруткой -->
+                        <div class="ingredients-scroll" style="max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                            <div class="row">
+                                {% for ingredient in category.ingredients.all %}
+                                <div class="col-md-4 col-sm-6 mb-2">
+                                    <div class="form-check">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            name="ingredients"
+                                            value="{{ ingredient.id }}"
+                                            id="ing_{{ ingredient.id }}"
+                                        >
+                                        <label class="form-check-label" for="ing_{{ ingredient.id }}">
+                                            {{ ingredient.name }}
+                                        </label>
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -128,7 +131,7 @@
             {% endfor %}
         </div>
 
-        <!-- Кнопка отправки -->
+        <!-- Кнопка отправки аккордеона -->
         <div class="text-center mt-4">
             <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow">
                 🔍 Заглянуть в холодильник
@@ -137,6 +140,7 @@
     </form>
 
     {% else %}
+    <!-- БЛОК ЕСЛИ ХОЛОДИЛЬНИК ПУСТ -->
     <div class="text-center py-5">
         <div class="alert alert-warning shadow">
             <h4>🧊 В холодильнике пусто</h4>
@@ -145,7 +149,8 @@
         </div>
     </div>
     {% endif %}
-</div>
+
+</div> <!-- Конец container -->
 
 <script>
 // Автозаполнение продуктов при вводе
@@ -218,8 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.focus();
                 autocompleteContainer.style.display = 'none';
             });
-
-            autocompleteContainer.appendChild(div);
+                        autocompleteContainer.appendChild(div);
         });
 
         autocompleteContainer.style.display = 'block';
@@ -234,3 +238,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+
+
