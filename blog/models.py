@@ -31,7 +31,7 @@ class FoodCategory(models.Model):
         ordering = ['name']
 
 
-# 2. Справочник ингредиентов (Курица, Томаты, Сметана)
+# 2. Справочник ингредиентов
 class Ingredient(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Название ингредиента")
     category = models.ForeignKey(
@@ -52,7 +52,6 @@ class Ingredient(models.Model):
 
 # 3. Модель рецепта
 class Article(models.Model):
-    # ВАЖНО: Добавили категории блюд
     DISH_CATEGORY_CHOICES = [
         ('dessert', 'Десерт'),
         ('appetizer', 'Закуска'),
@@ -210,12 +209,12 @@ class Comment(models.Model):
 
     @property
     def is_reply(self):
-        """Является ли этот комментарий ответом"""
+
         return self.parent is not None
 
     @property
     def depth(self):
-        """Глубина комментария в дереве (сколько уровней ответов)"""
+
         depth = 0
         parent = self.parent
         while parent:

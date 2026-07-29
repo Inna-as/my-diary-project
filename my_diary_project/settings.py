@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_bootstrap5',
-    'blog',  #  приложение блога
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -44,7 +44,6 @@ ROOT_URLCONF = 'my_diary_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Пустой список ДИРЕКТОРИЙ заставит Django искать шаблоны внутри папки приложения
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -91,10 +90,10 @@ USE_TZ = True
 
 # ==================== СТАТИЧЕСКИЕ ФАЙЛЫ ====================
 
-# URL-префикс для статических файлов (со слешем в начале!)
+# URL-префикс для статических файлов
 STATIC_URL = '/static/'
 
-# Где Django ищет статические файлы внутри проекта (в папке static)
+# Где Django ищет статические файлы внутри проекта
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
@@ -104,7 +103,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ==================== МЕДИА ФАЙЛЫ ====================
 
-# URL-префикс для медиафайлов (со слешем в начале!)
+# URL-префикс для медиафайлов
 MEDIA_URL = '/media/'
 
 # Где хранить загруженные медиафайлы

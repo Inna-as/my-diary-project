@@ -25,7 +25,7 @@ class Command(BaseCommand):
             return 1.0
 
         try:
-            # Диапазон: "4-5", "400-500"
+
             if '-' in value_str:
                 parts = value_str.split('-')
                 if len(parts) == 2:
@@ -34,7 +34,7 @@ class Command(BaseCommand):
                     except ValueError:
                         pass
 
-            # Дробь: "1/2", "1/3", "3/4"
+
             if '/' in value_str:
                 parts = value_str.split('/')
                 if len(parts) == 2:
@@ -46,7 +46,7 @@ class Command(BaseCommand):
                     except ValueError:
                         pass
 
-            # Тильда: "4~5"
+
             if '~' in value_str:
                 parts = value_str.split('~')
                 if len(parts) == 2:
@@ -86,10 +86,8 @@ class Command(BaseCommand):
             obj, _ = FoodCategory.objects.get_or_create(name=cat_name)
             cat_objects[cat_name] = obj
 
-        # ============================================
-        # ============================================
         # КАТЕГОРИИ РЕЦЕПТОВ (ПОЛЕ category В Article)
-        # ============================================
+
         RECIPE_CATEGORY_MAP = {
             # ===== DESSERT (Десерты) =====
             'варенье': 'dessert',
@@ -223,7 +221,7 @@ class Command(BaseCommand):
             'фрикадельки': 'main',
             'биточки': 'main',
             'голубцы': 'main',
-            'перц': 'main',  # 注意：可能需要根据具体情况匹配全名，如"перец"
+            'перц': 'main',
             'жаркое': 'main',
             'зразы': 'main',
             'картошка': 'main',
@@ -233,12 +231,12 @@ class Command(BaseCommand):
             'манты': 'main',
             'хинкали': 'main',
             'чучвара': 'main',
-            'солянка': 'soup',  # 重新定义：солянка是soup
+            'солянка': 'soup',
             'макароны': 'main',
             'паста': 'main',
             'спагетти': 'main',
             'вермишель': 'main',
-            'лапша': 'soup',  # 重新定义：лапша是soup
+            'лапша': 'soup',
             'равиоли': 'main',
             'каннеллони': 'main',
             'лазанья': 'main',
@@ -288,7 +286,7 @@ class Command(BaseCommand):
             'ягнятина': 'main',
             'фарш': 'main',
 
-            # ===== APPETIZER (Закуски - SALAT в эту категорию!) =====
+            # ===== APPETIZER (Закуски ) =====
             'винегрет': 'appetizer',
             'салат': 'appetizer',
             'греческий': 'appetizer',
@@ -439,12 +437,12 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.WARNING(f"⏭️ Рецепт '{title}' уже существует"))
                         continue
 
-                    # ============================================
-                    # ОПРЕДЕЛЯЕМ КАТЕГОРИЮ РЕЦЕПТА
-                    # ============================================
-                    recipe_category = 'main'  # Категория по умолчанию
 
-                    # Пробуем определить категорию по названию рецепта
+                    # ОПРЕДЕЛЯЕМ КАТЕГОРИЮ РЕЦЕПТА
+
+                    recipe_category = 'main'
+
+
                     title_lower = title.lower()
                     for keyword, category in RECIPE_CATEGORY_MAP.items():
                         if keyword in title_lower:
@@ -458,7 +456,7 @@ class Command(BaseCommand):
                             author=admin_user,
                             instructions=instructions,
                             is_published=True,
-                            category=recipe_category  # ← Добавили категорию!
+                            category=recipe_category
                         )
                         article.save()
 
@@ -469,7 +467,7 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.SUCCESS(
                             f"✅ Создан рецепт: {title} (id={article.id}, category={recipe_category})"))
 
-                        # Считаем статистику по категориям
+
                         if recipe_category in category_stats:
                             category_stats[recipe_category] += 1
                         else:
@@ -502,7 +500,7 @@ class Command(BaseCommand):
                             if not ing_name:
                                 continue
 
-                            # Количество (умный парсер!)
+                            # Количество
                             value_raw = ing_data.get('value', None)
                             amount = self.parse_amount(value_raw)
 
@@ -513,9 +511,9 @@ class Command(BaseCommand):
                             else:
                                 unit = str(unit_raw).strip() or 'г'
 
-                            # ============================================
-                            # ОПРЕДЕЛЯЕМ КАТЕГОРИЮ ИНГРЕДИЕНТА (ПОЛНЫЕ СПИСКИ!)
-                            # ============================================
+
+                            # ОПРЕДЕЛЯЕМ КАТЕГОРИЮ ИНГРЕДИЕНТА
+
 
                             # Категория 1: КОЛБАСНЫЕ ИЗДЕЛИЯ
                             if any(x in ing_name for x in [
@@ -635,7 +633,7 @@ class Command(BaseCommand):
                                 # Мука, сахар, соль
                                 'мука', 'сахар', 'сахарная пудра', 'соль',
 
-                                # Масла (только конкретные!)
+                                # Масла
                                 'подсолнечное масло', 'оливковое масло', 'растительное масло',
                                 'кукурузное масло', 'рапсовое масло', 'льняное масло',
                                 'горчичное масло', 'кунжутное масло', 'арахисовое масло',
@@ -692,7 +690,7 @@ class Command(BaseCommand):
 
                             # Категория 8: ЯГОДЫ И ФРУКТЫ
                             elif any(x in ing_name for x in [
-                                # Фрукты (единственное + множественное число)
+                                # Фрукты
                                 'яблоко', 'яблоки',
                                 'груша', 'груши',
                                 'банан', 'бананы',

@@ -12,7 +12,7 @@ from .forms import CustomUserCreationForm, UserProfileForm, ArticleForm
 import time
 
 
-# ============ ГЛАВНАЯ СТРАНИЦА ============
+# ГЛАВНАЯ СТРАНИЦА
 def index_view(request):
     query = request.GET.get('q', '').strip()
     sort_by = request.GET.get('sort', 'new')
@@ -52,7 +52,7 @@ def index_view(request):
     return render(request, 'blog/index.html', context)
 
 
-# ============ ДЕТАЛЬНАЯ СТРАНИЦА РЕЦЕПТА (ОБНОВЛЕНО) ============
+#  ДЕТАЛЬНАЯ СТРАНИЦА РЕЦЕПТА
 def article_detail_view(request, pk):
     article = get_object_or_404(
         Article.objects.annotate(comments_count=Count('comments')),
@@ -130,7 +130,7 @@ def article_detail_view(request, pk):
     }
     return render(request, 'blog/article_detail.html', context)
 
-# ============ РЕГИСТРАЦИЯ ============
+#  РЕГИСТРАЦИЯ
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -144,22 +144,22 @@ def register_view(request):
     return render(request, 'blog/register.html', {'form': form})
 
 
-# ============ СОЗДАНИЕ РЕЦЕПТА ============
+#  СОЗДАНИЕ РЕЦЕПТА =
 @login_required
 def article_create_view(request):
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES)
         if form.is_valid():
-            article = form.save(commit=False)  # Не сохраняем сразу в БД
-            article.author = request.user       # Добавляем автора
-            article.save()                      # Теперь сохраняем
+            article = form.save(commit=False)
+            article.author = request.user
+            article.save()
             return redirect('blog:article_detail', pk=article.pk)
     else:
         form = ArticleForm()
 
     return render(request, 'blog/article_form.html', {'form': form})
 
-# ============ РЕДАКТИРОВАНИЕ РЕЦЕПТА ============
+#  РЕДАКТИРОВАНИЕ РЕЦЕПТА
 @login_required
 def article_update_view(request, pk):
     article = get_object_or_404(Article, pk=pk)
@@ -175,7 +175,7 @@ def article_update_view(request, pk):
     return render(request, 'blog/article_form.html', {'form': form})
 
 
-# ============ УДАЛЕНИЕ РЕЦЕПТА ============
+# УДАЛЕНИЕ РЕЦЕПТА
 @login_required
 def article_delete_view(request, pk):
     article = get_object_or_404(Article, pk=pk)
@@ -187,7 +187,7 @@ def article_delete_view(request, pk):
     return render(request, 'blog/article_confirm_delete.html', {'article': article})
 
 
-# ============ ПРОФИЛЬ АВТОРА ============
+# ПРОФИЛЬ АВТОРА
 def author_profile_view(request, username):
     author = get_object_or_404(CustomUser, username=username)
     total_articles = author.article_set.count()
@@ -200,7 +200,7 @@ def author_profile_view(request, username):
     })
 
 
-# ============ ЛИЧНЫЙ КАБИНЕТ ============
+# ЛИЧНЫЙ КАБИНЕТ
 @login_required
 def profile_view(request):
     if request.method == 'POST':
@@ -236,7 +236,7 @@ def fridge_view(request):
     return render(request, 'blog/fridge.html', context)
 
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК - РЕЗУЛЬТАТЫ (ОБНОВЛЕНО) ============
+# ============ УМНЫЙ ХОЛОДИЛЬНИК - РЕЗУЛЬТАТЫ  ============
 @login_required
 def fridge_results_view(request):
     """
@@ -296,7 +296,7 @@ def fridge_results_view(request):
         'baking': 'Выпечка',
     }
 
-    # НОВАЯ ЛОГИКА: Если выбрана только категория (без ингредиентов)
+    #  Если выбрана только категория (без ингредиентов)
     if selected_category and not selected_ingredients:
         print(f"🟡 Поиск только по категории: {selected_category}")
 
@@ -312,10 +312,10 @@ def fridge_results_view(request):
         for recipe in recipes:
             recipe_ingredients = recipe.recipe_ingredients.all()
 
-            # Исправлено: собираем ингредиенты из recipe_ingredients
+            #  собираем ингредиенты из recipe_ingredients
             ingredient_list = []
             for ri in recipe_ingredients:
-                ingredient_list.append(ri.ingredient)  # Добавляем сам ингредиент, а не ri
+                ingredient_list.append(ri.ingredient)
 
             results.append({
                 'recipe': recipe,
@@ -348,12 +348,12 @@ def fridge_results_view(request):
     print(f"🔵 Выбрано ингредиентов: {len(selected_ingredients)}, категория: {selected_category}")
     print(f"🔵 Текст ввода: {ingredients_text}")
 
-    # ОПТИМИЗАЦИЯ 1: Фильтруем рецепты только по тем, что содержат выбранные ингредиенты
+    #  Фильтруем рецепты только по тем, что содержат выбранные ингредиенты
     recipes = Article.objects.filter(
         recipe_ingredients__ingredient__id__in=selected_ingredients
     ).distinct()
 
-    # ОПТИМИЗАЦИЯ 2: Фильтрация по категории блюда
+    #  Фильтрация по категории блюда
     if selected_category:
         recipes = recipes.filter(category=selected_category)
 
@@ -362,7 +362,7 @@ def fridge_results_view(request):
 
     print(f"🔵 После фильтрации осталось рецептов: {recipes.count()}")
 
-    # ОПТИМИЗАЦИЯ 3: Загружаем все заменители один раз в память
+    # Загружаем все заменители один раз в память
     substitutions_qs = IngredientSubstitution.objects.select_related('replacement').all()
     substitutions_map = {}
     for sub in substitutions_qs:
@@ -474,7 +474,7 @@ def fridge_results_view(request):
 
 
 def get_missing_ingredients(recipe_ingredients, selected_ingredients, substitutions_map=None):
-    """Возвращает список недостающих ингредиентов (оптимизировано)"""
+
     missing = []
     selected_set = set(selected_ingredients)
 
@@ -499,25 +499,22 @@ def get_missing_ingredients(recipe_ingredients, selected_ingredients, substituti
 
     return missing
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК - ПОИСК (JSON) ============
+# ============ УМНЫЙ ХОЛОДИЛЬНИК - ПОИСК  ============
 @login_required
 def fridge_search_view(request):
-    """
-    Оптимизированный JSON-поиск.
-    Фильтруем только релевантные рецепты и сортируем по количеству совпадений.
-    """
+
     selected_ingredients = request.session.get('selected_ingredients', [])
     selected_category = request.GET.get('category') or request.session.get('selected_category', '')
 
     if not selected_ingredients:
         return JsonResponse({'recipes': []})
 
-    # ОПТИМИЗАЦИЯ 1: Фильтруем рецепты по ингредиентам
+    #  Фильтруем рецепты по ингредиентам
     recipes = Article.objects.filter(
         recipe_ingredients__ingredient__id__in=selected_ingredients
     ).distinct()
 
-    # ОПТИМИЗАЦИЯ 2: Фильтрация по категории блюда
+    #  Фильтрация по категории блюда
     if selected_category:
         recipes = recipes.filter(category=selected_category)
 

@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <!-- Лайки (сердечко) - ОСТАВИЛ -->
+                <!-- Лайки -->
                 <div class="ms-auto text-center">
                     <button id="like-btn"
                             class="btn {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %} btn-lg"
@@ -194,7 +194,7 @@
                                         <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
                                     </div>
 
-                                    <!-- ❌ УДАЛИЛ: Лайки для комментария -->
+
                                 </div>
 
                                 <p class="mb-2 ms-5">{{ comment.text|linebreaks }}</p>
@@ -257,7 +257,7 @@
                                                     <small class="text-muted">{{ reply.created_at|date:"d.m.Y H:i" }}</small>
                                                 </div>
 
-                                                <!-- ❌ УДАЛИЛ: Лайки для ответа -->
+
                                             </div>
 
                                             <p class="mb-2 ms-5">{{ reply.text|linebreaks }}</p>

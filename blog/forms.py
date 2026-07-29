@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Article, CustomUser
 
 
-# ============ ФОРМА ДЛЯ СОЗДАНИЯ/РЕДАКТИРОВАНИЯ РЕЦЕПТА (ОБНОВЛЕНО) ============
+# ============ ФОРМА ДЛЯ СОЗДАНИЯ/РЕДАКТИРОВАНИЯ РЕЦЕПТА  ============
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
@@ -53,7 +53,7 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email')
 
 
-# ============ НОВЫЕ ФОРМЫ "УМНЫЙ ХОЛОДИЛЬНИК" ============
+
 
 # Форма для выбора ингредиентов в холодильнике
 class FridgeForm(forms.Form):
@@ -81,7 +81,7 @@ class PortionsForm(forms.Form):
     )
 
 
-# Форма для добавления ингредиента в рецепт (для админки или фичи редактирования)
+# Форма для добавления ингредиента в рецепт
 class RecipeIngredientForm(forms.Form):
     ingredient = forms.ModelChoiceField(
         queryset=None,  # Заполняется в view
