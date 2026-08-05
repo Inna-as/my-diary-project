@@ -52,6 +52,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'blog.context_processors.branding_context',
+                'blog.context_processors.greeting_context',
             ],
         },
     },
@@ -125,3 +127,12 @@ CACHES = {
 LOGIN_REDIRECT_URL = 'blog:index'
 LOGOUT_REDIRECT_URL = 'blog:index'
 AUTH_USER_MODEL = 'blog.CustomUser'
+
+# Брендинг проекта
+PROJECT_NAME = 'Еда на любой вкус'
+PROJECT_SLUG = 'eda-na-luboy-vkus'
+PROJECT_SLOGAN = 'Твой навигатор на кухне для поиска вкусных рецептов'
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'

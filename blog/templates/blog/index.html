@@ -1,45 +1,72 @@
 {% extends 'blog/base.html' %}
-{% load cache %}
 
 {% block content %}
+
+<div class="branding-header text-center mb-4">
+    <h1>{{ PROJECT_NAME }}</h1>
+    <p class="lead">{{ PROJECT_SLOGAN }}</p>
+    <p class="text-muted">{{ GREETING }}</p>
+</div>
+
 <div class="row">
-    <!-- Левая колонка: Список статей + Поиск + Сортировка -->
     <div class="col-md-12">
 
-                <!-- ПОИСК  -->
+        <!-- ═══════ БАННЕР «РЕЦЕПТ ДНЯ» ═══════ -->
+        {% if recipe_of_day %}
+        <div class="card bg-warning bg-gradient text-dark mb-4 shadow border-0">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="text-uppercase small fw-bold opacity-75 mb-1">🍽️ Рецепт дня</h5>
+                        <h4 class="fw-bold mb-2">
+                            <a href="{% url 'blog:article_detail' recipe_of_day.pk %}"
+                               class="text-dark text-decoration-none">
+                                {{ recipe_of_day.title }}
+                            </a>
+                        </h4>
+                        {% if recipe_of_day.description %}
+                            <p class="mb-2">{{ recipe_of_day.description|truncatewords:20 }}</p>
+                        {% endif %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if recipe_of_day.cook_time %}
+                                <span class="badge bg-dark">⏱ {{ recipe_of_day.cook_time }} мин</span>
+                            {% endif %}
+                            {% if recipe_of_day.difficulty %}
+                                <span class="badge bg-dark">{{ recipe_of_day.get_difficulty_display }}</span>
+                            {% endif %}
+                            {% if recipe_of_day.calories %}
+                                <span class="badge bg-dark">🔥 {{ recipe_of_day.calories }} ккал</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'blog:article_detail' recipe_of_day.pk %}"
+                           class="btn btn-dark rounded-pill px-4">Смотреть →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ПОИСК -->
         <div class="mb-4">
             <form method="get" action="{% url 'blog:index' %}" class="d-flex shadow-sm rounded-pill overflow-hidden border">
-                <!-- Сохраняем категорию и сортировку, чтобы они не сбросились при поиске -->
-                {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.id }}">{% endif %}
                 {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
-
-                <!--  плейсхолдер и текст на кнопке -->
-                <input type="search" name="q" class="form-control border-0 px-4" placeholder="Найти рецепт или шеф-повара..." value="{{ query }}" aria-label="Search">
+                <input type="search" name="q" class="form-control border-0 px-4"
+                       placeholder="Найти рецепт или шеф-повара..." value="{{ query }}" aria-label="Search">
                 <button class="btn btn-primary px-4 fw-bold" type="submit">Найти</button>
             </form>
         </div>
 
+        <h2 class="mb-4 h3 fw-bold text-dark">Каталог рецептов</h2>
 
-        <!-- Показываем заголовок фильтра, если выбран конкретный тег -->
-        {% if selected_tag %}
-            <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm mb-4">
-                <span>📌 Записи с тегом: <strong>{{ selected_tag.name }}</strong></span>
-                <!-- Кнопка сброса фильтра -->
-                <a href="{% url 'blog:index' %}" class="btn btn-sm btn-close"></a>
-            </div>
-        {% else %}
-            <h2 class="mb-4 h3 fw-bold text-dark">Каталог рецептов</h2>
-
-        {% endif %}
-
-        <!-- СОРТИРОВКА СТАТЕЙ -->
+        <!-- СОРТИРОВКА -->
         <div class="d-flex justify-content-end align-items-center mb-3 small">
             <span class="text-muted me-2">Сортировка:</span>
             <form method="get" action="." id="sortForm" class="d-inline">
                 {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-                {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag.id }}">{% endif %}
-
-                <select name="sort" class="form-select form-select-sm rounded-pill shadow-sm px-3" onchange="document.getElementById('sortForm').submit();">
+                <select name="sort" class="form-select form-select-sm rounded-pill shadow-sm px-3"
+                        onchange="document.getElementById('sortForm').submit();">
                     <option value="new" {% if sort_by == 'new' %}selected{% endif %}>Сначала новые</option>
                     <option value="old" {% if sort_by == 'old' %}selected{% endif %}>Сначала старые</option>
                     <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Самые обсуждаемые</option>
@@ -47,27 +74,58 @@
             </form>
         </div>
 
+        <!-- КАРТОЧКИ РЕЦЕПТОВ -->
         {% for article in page_obj %}
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
-                    <h2><a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">{{ article.title }}</a></h2>
-                                        <p class="text-muted extra-small" style="font-size: 0.85rem;">
-    <!--   имя автора ведет в его профиль -->
-    Автор: <a href="{% url 'blog:author_profile' article.author.username %}" class="text-decoration-none fw-bold text-dark">{{ article.author.username }}</a> |
-    Дата: {{ article.created_at|date:"d.m.Y" }} |
-    <span class="text-danger">❤️  {{ article.favorites_count }}</span> |
-    <span class="text-primary">💬 Комментарии: {{ article.comments_count }}</span>
-</p>
+                    <h2>
+                        <a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">
+                            {{ article.title }}
+                        </a>
+                    </h2>
 
+                    <p class="text-muted extra-small" style="font-size: 0.85rem;">
+                        Автор:
+                        <a href="{% url 'blog:author_profile' article.author.username %}"
+                           class="text-decoration-none fw-bold text-dark">
+                            {{ article.author.username }}
+                        </a> |
+                        Дата: {{ article.created_at|date:"d.m.Y" }} |
+                        <span class="text-danger">❤️ {{ article.favorites_count }}</span> |
+                        <span class="text-primary">💬 {{ article.comments_count }}</span>
+                    </p>
 
-                    <p class="card-text text-secondary">{{ article.content|truncatewords:20 }}</p>
+                    {% if article.description %}
+                        <p class="card-text text-secondary">{{ article.description|truncatewords:25 }}</p>
+                    {% endif %}
 
-                    <!-- ТЕГИ ВНУТРИ КАРТОЧКИ -->
-                    <div>
-                        {% for tag in article.tags.all %}
-                            <a href="{% url 'blog:index' %}?tag={{ tag.id }}" class="badge bg-secondary text-decoration-none me-1">{{ tag.name }}</a>
-                        {% endfor %}
+                    <!-- ═══ НОВЫЕ ПОЛЯ: время, сложность, КБЖУ ═══ -->
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% if article.cook_time %}
+                            <span class="badge bg-success rounded-pill">⏱ {{ article.cook_time }} мин</span>
+                        {% endif %}
+                        {% if article.difficulty %}
+                            <span class="badge bg-info rounded-pill">{{ article.get_difficulty_display }}</span>
+                        {% endif %}
+                        {% if article.calories %}
+                            <span class="badge bg-warning text-dark rounded-pill">🔥 {{ article.calories }} ккал</span>
+                        {% endif %}
                     </div>
+
+                    <!-- Строка БЖУ -->
+                    {% if article.protein or article.fat or article.carbs %}
+                        <div class="d-flex flex-wrap gap-1 small text-muted">
+                            {% if article.protein %}
+                                <span>🟥 Б: {{ article.protein }} г</span>
+                            {% endif %}
+                            {% if article.fat %}
+                                <span>🟨 Ж: {{ article.fat }} г</span>
+                            {% endif %}
+                            {% if article.carbs %}
+                                <span>🟩 У: {{ article.carbs }} г</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         {% empty %}
@@ -76,33 +134,35 @@
             </div>
         {% endfor %}
 
-        <!-- БЛОК ПАГИНАЦИИ  -->
+        <!-- ПАГИНАЦИЯ -->
         {% if page_obj.has_other_pages %}
             <div class="d-flex justify-content-center align-items-center gap-3 mt-5 mb-4">
-
-                <!-- Кнопка НАЗАД  -->
                 {% if page_obj.has_previous %}
-                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_tag %}&tag={{ selected_tag.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&larr; Назад</a>
+                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none"
+                       href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                        &larr; Назад
+                    </a>
                 {% else %}
                     <button class="btn btn-sm btn-light border text-muted rounded-pill px-3" disabled>&larr; Назад</button>
                 {% endif %}
 
-                <!-- Номер страницы  -->
-                <span class="badge bg-white border text-secondary rounded-pill p-2 px-4 shadow-sm fw-normal" style="font-size: 0.85rem;">
-                    Страница <strong class="text-primary">{{ page_obj.number }}</strong> из {{ page_obj.paginator.num_pages }}
+                <span class="badge bg-white border text-secondary rounded-pill p-2 px-4 shadow-sm fw-normal"
+                      style="font-size: 0.85rem;">
+                    Страница <strong class="text-primary">{{ page_obj.number }}</strong>
+                    из {{ page_obj.paginator.num_pages }}
                 </span>
 
-                <!-- Кнопка ВПЕРЁД  -->
                 {% if page_obj.has_next %}
-                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_tag %}&tag={{ selected_tag.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Вперед &rarr;</a>
+                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none"
+                       href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                        Вперед &rarr;
+                    </a>
                 {% else %}
                     <button class="btn btn-sm btn-light border text-muted rounded-pill px-3" disabled>Вперед &rarr;</button>
                 {% endif %}
-
             </div>
         {% endif %}
 
     </div>
-
 </div>
 {% endblock %}

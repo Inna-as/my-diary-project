@@ -65,6 +65,12 @@ class Article(models.Model):
         ('baking', 'Выпечка'),
     ]
 
+    DIFFICULTY_CHOICES = [
+        ('easy', 'Легко'),
+        ('medium', 'Средне'),
+        ('hard', 'Сложно'),
+    ]
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -91,6 +97,24 @@ class Article(models.Model):
         null=True
     )
     likes_count = models.PositiveIntegerField(default=0, verbose_name='Количество лайков')
+
+    # ═══════ НОВЫЕ ПОЛЯ: время, сложность, KBJU ═══════
+    cook_time = models.PositiveIntegerField(
+        "Время приготовления (мин)",
+        null=True,
+        blank=True,
+        help_text="Укажите время в минутах"
+    )
+    difficulty = models.CharField(
+        "Сложность",
+        max_length=10,
+        choices=DIFFICULTY_CHOICES,
+        default='easy'
+    )
+    calories = models.PositiveIntegerField("Калорийность (ккал)", null=True, blank=True)
+    protein = models.PositiveIntegerField("Белки (г)", null=True, blank=True)
+    fat = models.PositiveIntegerField("Жиры (г)", null=True, blank=True)
+    carbs = models.PositiveIntegerField("Углеводы (г)", null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -123,29 +147,6 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = "Ингредиент рецепта"
         verbose_name_plural = "Ингредиенты рецептов"
-
-
-# 5. Умные замены продуктов
-class IngredientSubstitution(models.Model):
-    source = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE,
-        related_name='substitutions_from',
-        verbose_name="Исходный продукт"
-    )
-    replacement = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE,
-        related_name='substitutions_to',
-        verbose_name="Продукт-аналог"
-    )
-
-    def __str__(self):
-        return f"{self.source.name} → {self.replacement.name}"
-
-    class Meta:
-        verbose_name = "Замена ингредиента"
-        verbose_name_plural = "Замены ингредиентов"
 
 
 # 6. Личная кулинарная книга (Избранное)
@@ -198,6 +199,25 @@ class Comment(models.Model):
     )
 
     likes_count = models.PositiveIntegerField(default=0, verbose_name='Количество лайков')
+    is_approved = models.BooleanField(
+        'Одобрен',
+        default=False,
+        help_text='Показывать комментарий на сайте'
+    )
+    is_spam = models.BooleanField(
+        'Спам',
+        default=False,
+        help_text='Автофильтр пометил как спам'
+    )
+    report_count = models.PositiveIntegerField(
+        'Жалоб',
+        default=0
+    )
+    auto_approved = models.BooleanField(
+        'Автоодобрен',
+        default=False,
+        help_text='Пропущен автоматически (доверенный пользователь)'
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -209,15 +229,48 @@ class Comment(models.Model):
 
     @property
     def is_reply(self):
-
         return self.parent is not None
 
     @property
     def depth(self):
-
         depth = 0
         parent = self.parent
         while parent:
             depth += 1
             parent = parent.parent
         return depth
+
+
+# ═══════ ОТДЕЛЬНАЯ МОДЕЛЬ (НЕ внутри Comment!) ═══════
+class CommentReport(models.Model):
+    """Жалоба пользователя на комментарий."""
+    comment = models.ForeignKey(
+        Comment,
+        on_delete=models.CASCADE,
+        related_name='reports',
+        verbose_name='Комментарий'
+    )
+    reporter = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        verbose_name='Пожаловался'
+    )
+    reason = models.CharField(
+        'Причина',
+        max_length=50,
+        choices=[
+            ('spam', 'Спам'),
+            ('abuse', 'Оскорбление'),
+            ('offtopic', 'Не по теме'),
+        ]
+    )
+    created_at = models.DateTimeField('Дата жалобы', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Жалоба на комментарий'
+        verbose_name_plural = 'Жалобы на комментарии'
+        unique_together = ('comment', 'reporter')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.reporter.username} → {self.comment.text[:30]}'

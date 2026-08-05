@@ -7,7 +7,11 @@ from .models import Article, CustomUser
 class ArticleForm(forms.ModelForm):
     class Meta:
         model = Article
-        fields = ['title', 'description', 'instructions', 'category', 'image']
+        fields = [
+            'title', 'description', 'instructions', 'category',
+            'image', 'cook_time', 'difficulty',
+            'calories', 'protein', 'fat', 'carbs',
+        ]
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control rounded-pill px-3',
@@ -29,6 +33,34 @@ class ArticleForm(forms.ModelForm):
             'image': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': 'image/*'
+            }),
+            'cook_time': forms.NumberInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'Время в минутах',
+                'min': 1,
+            }),
+            'difficulty': forms.Select(attrs={
+                'class': 'form-select rounded-3'
+            }),
+            'calories': forms.NumberInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'ккал',
+                'min': 0,
+            }),
+            'protein': forms.NumberInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'г',
+                'min': 0,
+            }),
+            'fat': forms.NumberInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'г',
+                'min': 0,
+            }),
+            'carbs': forms.NumberInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'г',
+                'min': 0,
             }),
         }
 
@@ -53,12 +85,10 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email')
 
 
-
-
 # Форма для выбора ингредиентов в холодильнике
 class FridgeForm(forms.Form):
     ingredients = forms.ModelMultipleChoiceField(
-        queryset=None,  # Заполняется в view
+        queryset=None,
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         required=False,
         label='Выберите продукты, которые у вас есть'
@@ -84,7 +114,7 @@ class PortionsForm(forms.Form):
 # Форма для добавления ингредиента в рецепт
 class RecipeIngredientForm(forms.Form):
     ingredient = forms.ModelChoiceField(
-        queryset=None,  # Заполняется в view
+        queryset=None,
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Ингредиент'
     )

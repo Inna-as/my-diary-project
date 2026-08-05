@@ -1,63 +1,71 @@
 {% load django_bootstrap5 %}
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Кулинарный Дневник — Простые рецепты</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ Точка вкуса — Простые рецепты</title>
     {% bootstrap_css %}
 </head>
 <body>
-    <!-- НАВИГАЦИЯ -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'blog:index' %}">
-                🍳 Кулинарный Дневник
-            </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'blog:index' %}">🍽️ Точка вкуса</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav me-auto">
-                    <!-- 👇 НОВАЯ КНОПКА -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog:fridge' %}">
-                            🧊 Умный Холодильник
-                        </a>
+                        <a class="nav-link" href="{% url 'blog:fridge' %}">🧊 Умный холодильник</a>
                     </li>
                 </ul>
 
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <span class="nav-link text-white">Привет, {{ user.username }}!</span>
+                            <span class="nav-link">Привет, {{ user.username }}!</span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'blog:profile' %}">⚙️ Профиль</a>
                         </li>
-                        {% if user.is_authenticated and user.is_staff %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'admin:index' %}">🔒 Админка</a>
-                            </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'blog:favorites' %}">❤️ Избранное</a>
+                        </li>
+
+                        {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="{% url 'blog:moderate' %}">
+                                🛡️ Модерация
+                                <span id="pendingBadge" class="badge bg-warning text-dark ms-1">{{ pending_count|default:0 }}</span>
+                            </a>
+                        </li>
                         {% endif %}
+
+                        {% if user.is_staff %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/">🔒 Админка</a>
+                        </li>
+                        {% endif %}
+
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'blog:article_create' %}">➕ Добавить рецепт</a>
                         </li>
                         <li class="nav-item">
-                            <form action="{% url 'blog:logout' %}" method="post" class="d-inline">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-link nav-link">Выйти</button>
+                                <button type="submit" class="btn nav-link border-0 bg-transparent">🚪 Выйти</button>
                             </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:login' %}">Войти</a>
+                            <a class="nav-link" href="{% url 'login' %}">🔑 Войти</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:register' %}">Регистрация</a>
+                            <a class="nav-link" href="{% url 'blog:register' %}">📝 Регистрация</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -65,11 +73,41 @@
         </div>
     </nav>
 
-    <div class="container">
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="container mt-4">
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
+
+    {% block extra_js %}{% endblock %}
 
     {% bootstrap_javascript %}
+
+    {% if user.is_authenticated %}
+    <script>
+    // Обновление счётчика модерации раз в 60 секунд
+    setInterval(function() {
+        fetch('{% url "blog:moderate_count" %}')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('pendingBadge');
+                if (badge) {
+                    badge.textContent = data.count;
+                }
+            });
+    }, 60000);
+    </script>
+    {% endif %}
+
 </body>
 </html>

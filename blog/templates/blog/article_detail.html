@@ -1,384 +1,246 @@
 {% extends 'blog/base.html' %}
-
-{% block title %}{{ article.title }}{% endblock %}
+{% load static %}
+{% load blog_filters %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Заголовок рецепта -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h1 class="card-title mb-4">{{ article.title }}</h1>
+<div class="container py-4">
+    <div class="row">
+        <!-- ═══════ ЛЕВАЯ КОЛОНКА: ОСНОВНАЯ ИНФОРМАЦИЯ ═══════ -->
+        <div class="col-lg-8">
+            <h1 class="fw-bold mb-2">{{ article.title }}</h1>
 
-            <!-- Блок автора с аватаркой -->
-            <div class="d-flex align-items-center mb-4 p-3 bg-light rounded">
-                <!-- Аватарка автора -->
-                <div class="me-3">
-                    {% if article.author.avatar %}
-                        <img src="{{ article.author.avatar.url }}"
-                             alt="{{ article.author.username }}"
-                             class="rounded-circle"
-                             style="width: 60px; height: 60px; object-fit: cover; border: 3px solid #28a745;">
-                    {% else %}
-                        <!-- Дефолтная аватарка -->
-                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
-                             style="width: 60px; height: 60px; border: 3px solid #28a745;">
-                            <span style="font-size: 28px; color: white;">👤</span>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Информация об авторе -->
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                        <span class="text-muted me-2">Автор:</span>
-                        <a href="{% url 'blog:author_profile' article.author.username %}"
-                           class="text-decoration-none fw-bold text-dark">
-                            {{ article.author.username }}
-                        </a>
-                        {% if article.author.first_name or article.author.last_name %}
-                            <span class="text-muted ms-2">
-                                ({{ article.author.first_name }} {{ article.author.last_name }})
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="text-muted">
-                        <small>📅 Опубликовано: {{ article.created_at|date:"d.m.Y в H:i" }}</small>
-                    </div>
-                </div>
-
-                <!-- Лайки -->
-                <div class="ms-auto text-center">
-                    <button id="like-btn"
-                            class="btn {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %} btn-lg"
-                            data-recipe-id="{{ article.id }}">
-                        {% if is_favorite %}
-                            <span id="like-icon">❤️</span>
-                        {% else %}
-                            <span id="like-icon">🤍</span>
-                        {% endif %}
-                    </button>
-                    <div class="mt-1">
-                        <span id="likes-count" class="badge bg-danger">{{ likes_count }}</span>
-                    </div>
-                </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span class="badge bg-success rounded-pill">{{ article.get_category_display }}</span>
+                <span class="badge bg-info rounded-pill">{{ article.get_difficulty_display }}</span>
+                {% if article.cook_time %}
+                    <span class="badge bg-warning text-dark rounded-pill">⏱ {{ article.cook_time }} мин</span>
+                {% endif %}
             </div>
 
-            <!-- Кнопки редактирования (только для автора или админа) -->
-            {% if can_edit %}
-            <div class="mb-4">
-                <a href="{% url 'blog:article_update' pk=article.pk %}"
-                   class="btn btn-warning me-2">
-                    ✏️ Редактировать
-                </a>
-                <a href="{% url 'blog:article_delete' pk=article.pk %}"
-                   class="btn btn-danger"
-                   onclick="return confirm('Вы уверены, что хотите удалить этот рецепт?');">
-                    🗑️ Удалить
-                </a>
-            </div>
-            {% endif %}
+            <p class="text-muted small">
+                Автор: <strong>{{ article.author.username }}</strong> |
+                Опубликовано: {{ article.created_at|date:"d.m.Y в H:i" }}
+            </p>
 
-            <!-- Ингредиенты и инструкции -->
-            <div class="row">
-                <!-- Ингредиенты -->
-                <div class="col-md-5 mb-4">
-                    <div class="card h-100 border-success">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">🥗 Ингредиенты</h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <!-- Выбор порций -->
-                            <div class="mb-3 p-3">
-                                <label class="form-label fw-bold">Количество порций:</label>
-                                <div class="btn-group w-100" role="group">
-                                    <a href="?portions=1" class="btn btn-outline-success {% if portions == 1 %}active{% endif %}">1</a>
-                                    <a href="?portions=2" class="btn btn-outline-success {% if portions == 2 %}active{% endif %}">2</a>
-                                    <a href="?portions=4" class="btn btn-outline-success {% if portions == 4 %}active{% endif %}">4</a>
-                                    <a href="?portions=6" class="btn btn-outline-success {% if portions == 6 %}active{% endif %}">6</a>
-                                    <a href="?portions=8" class="btn btn-outline-success {% if portions == 8 %}active{% endif %}">8</a>
-                                </div>
-                            </div>
-
-                            <!-- Список ингредиентов с прокруткой -->
-                            <div class="ingredients-scroll" style="max-height: 400px; overflow-y: auto;">
-                                <ul class="list-group list-group-flush">
-                                    {% for item in ingredients_with_amounts %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="fw-bold">{{ item.ingredient.name|title }}</span>
-                                            <br>
-                                            <small class="text-muted">{{ item.ingredient.category.name }}</small>
-                                        </div>
-                                        <span class="badge bg-success rounded-pill fs-6">
-                                            {{ item.amount|floatformat:1 }} {{ item.unit }}
-                                        </span>
-                                    </li>
-                                    {% empty %}
-                                    <li class="list-group-item text-muted text-center">
-                                        Ингредиенты не указаны
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Инструкции -->
-                <div class="col-md-7 mb-4">
-                    <div class="card h-100 border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">📝 Приготовление</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="instructions" style="line-height: 1.8;">
-                                {{ article.instructions|linebreaks }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Комментарии -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">💬 Комментарии ({{ comments.count }})</h5>
-        </div>
-        <div class="card-body">
-            <!-- Форма комментария -->
-            {% if user.is_authenticated %}
-            <form method="post" class="mb-4" id="comment-form">
-                {% csrf_token %}
+            {% if user.is_authenticated and can_edit %}
                 <div class="mb-3">
-                    <textarea name="comment_text"
-                              class="form-control"
-                              rows="3"
-                              placeholder="Напишите ваш комментарий..."
-                              required></textarea>
+                    <a href="{% url 'blog:article_update' article.pk %}" class="btn btn-sm btn-outline-primary">✏️ Редактировать</a>
+                    <a href="{% url 'blog:article_delete' article.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Удалить</a>
                 </div>
-                <button type="submit" class="btn btn-primary">
-                    📤 Отправить
-                </button>
-            </form>
-            {% else %}
-            <div class="alert alert-info">
-                ℹ️ <a href="{% url 'blog:login' %}" class="alert-link">Войдите</a>, чтобы оставить комментарий.
+            {% endif %}
+
+            <!-- ═══════ БЛОК КБЖУ ═══════ -->
+            {% if article.calories or article.protein or article.fat or article.carbs %}
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    🔬 Пищевая ценность (на 100 г)
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        {% if article.calories %}
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-danger">🔥 {{ article.calories }}</div>
+                            <small class="text-muted">ккал</small>
+                        </div>
+                        {% endif %}
+                        {% if article.protein %}
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-danger">🟥 {{ article.protein }} г</div>
+                            <small class="text-muted">Белки</small>
+                        </div>
+                        {% endif %}
+                        {% if article.fat %}
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-warning">🟨 {{ article.fat }} г</div>
+                            <small class="text-muted">Жиры</small>
+                        </div>
+                        {% endif %}
+                        {% if article.carbs %}
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-success">🟩 {{ article.carbs }} г</div>
+                            <small class="text-muted">Углеводы</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             {% endif %}
 
-            <!-- Список комментариев с поддержкой вложенности (2 уровня) -->
-            <div class="comments-list">
-                {% for comment in comments %}
-                    {% if not comment.parent %}
-                        <div class="card mb-3 border-left-primary" style="margin-left: 0px;">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <!-- Аватарка -->
-                                    {% if comment.author.avatar %}
-                                        <img src="{{ comment.author.avatar.url }}"
-                                             alt="{{ comment.author.username }}"
-                                             class="rounded-circle me-2"
-                                             style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2"
-                                             style="width: 40px; height: 40px;">
-                                            <span style="color: white;">👤</span>
-                                        </div>
-                                    {% endif %}
-
-                                    <div>
-                                        <strong>{{ comment.author.username }}</strong>
-                                        <br>
-                                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
-                                    </div>
-
-
-                                </div>
-
-                                <p class="mb-2 ms-5">{{ comment.text|linebreaks }}</p>
-
-                                <!-- Кнопка "Ответить" -->
-                                {% if user.is_authenticated %}
-                                <div class="ms-5 mb-2">
-                                    <button class="btn btn-sm btn-outline-primary"
-                                            onclick="toggleReplyForm({{ comment.id }}, '{{ comment.author.username }}')">
-                                        ↩️ Ответить
-                                    </button>
-                                </div>
-                                {% endif %}
-
-                                <!-- Скрытая форма ответа -->
-                                {% if user.is_authenticated %}
-                                <div id="reply-form-{{ comment.id }}" style="display: none;" class="ms-5 mt-2 p-2 bg-light rounded">
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="parent_id" value="{{ comment.id }}">
-                                        <div class="mb-2">
-                                            <textarea name="comment_text"
-                                                      class="form-control"
-                                                      rows="2"
-                                                      placeholder="Ответ {{ comment.author.username }}..."
-                                                      required></textarea>
-                                        </div>
-                                        <button type="submit" class="btn btn-sm btn-success">
-                                            📤 Ответить
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-secondary"
-                                                onclick="cancelReply({{ comment.id }})">
-                                            ✕ Отмена
-                                        </button>
-                                    </form>
-                                </div>
-                                {% endif %}
-
-                                <!-- Ответы на этот комментарий (2 уровень) -->
-                                {% for reply in comment.replies.all %}
-                                    <div class="card mb-2 border-left-success" style="margin-left: 30px;">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-2">
-                                                {% if reply.author.avatar %}
-                                                    <img src="{{ reply.author.avatar.url }}"
-                                                         alt="{{ reply.author.username }}"
-                                                         class="rounded-circle me-2"
-                                                         style="width: 40px; height: 40px; object-fit: cover;">
-                                                {% else %}
-                                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2"
-                                                         style="width: 40px; height: 40px;">
-                                                        <span style="color: white;">👤</span>
-                                                    </div>
-                                                {% endif %}
-
-                                                <div>
-                                                    <strong>{{ reply.author.username }}</strong>
-                                                    <small class="text-muted">→ ответил {{ comment.author.username }}</small>
-                                                    <br>
-                                                    <small class="text-muted">{{ reply.created_at|date:"d.m.Y H:i" }}</small>
-                                                </div>
-
-
-                                            </div>
-
-                                            <p class="mb-2 ms-5">{{ reply.text|linebreaks }}</p>
-
-                                            {% if user.is_authenticated %}
-                                            <div class="ms-5 mb-2">
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        onclick="toggleReplyForm({{ reply.id }}, '{{ reply.author.username }}')">
-                                                    ↩️ Ответить
-                                                </button>
-                                            </div>
-                                            {% endif %}
-
-                                            <!-- Скрытая форма ответа на ответ -->
-                                            {% if user.is_authenticated %}
-                                            <div id="reply-form-{{ reply.id }}" style="display: none;" class="ms-5 mt-2 p-2 bg-light rounded">
-                                                <form method="post">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="parent_id" value="{{ reply.id }}">
-                                                    <div class="mb-2">
-                                                        <textarea name="comment_text"
-                                                                  class="form-control"
-                                                                  rows="2"
-                                                                  placeholder="Ответ {{ reply.author.username }}..."
-                                                                  required></textarea>
-                                                    </div>
-                                                    <button type="submit" class="btn btn-sm btn-success">
-                                                        📤 Ответить
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-secondary"
-                                                            onclick="cancelReply({{ reply.id }})">
-                                                        ✕ Отмена
-                                                    </button>
-                                                </form>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                {% empty %}
-                <div class="text-center text-muted py-4">
-                    <p>📭 Комментариев пока нет</p>
-                    <p>Станьте первым!</p>
+            <!-- ═══════ ОПИСАНИЕ ═══════ -->
+            {% if article.description %}
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">{{ article.description }}</p>
+                    </div>
                 </div>
-                {% endfor %}
+            {% endif %}
+
+            <!-- ═══════ ИЗОБРАЖЕНИЕ ═══════ -->
+            {% if article.image %}
+                <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded shadow-sm mb-4" style="max-height: 400px; width: 100%; object-fit: cover;">
+            {% endif %}
+
+            <!-- ═══════ ИНСТРУКЦИИ ═══════ -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white fw-bold">
+                    📝 Приготовление
+                </div>
+                <div class="card-body" style="white-space: pre-line;">
+                    {{ article.instructions }}
+                </div>
+            </div>
+
+            <!-- ═══════ КОММЕНТАРИИ ═══════ -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    💬 Комментарии ({{ comments.count }})
+                </div>
+                <div class="card-body">
+                    {% for comment in comments %}
+                        <div class="mb-3 border-bottom pb-2">
+                            <strong>{{ comment.author.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+
+                            <!-- НОВОЕ: фильтр мата -->
+                            <p class="mb-1">{{ comment.text|censor }}</p>
+
+                            <!-- НОВОЕ: кнопка «Пожаловаться» -->
+                            {% if user.is_authenticated and user != comment.author %}
+                            <div class="mt-1">
+                                <button class="btn btn-outline-warning btn-sm report-comment-btn"
+                                        data-comment-id="{{ comment.id }}">
+                                    🚩 Пожаловаться
+                                </button>
+                                <small class="text-muted report-status" id="report-status-{{ comment.id }}"></small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
+                    {% endfor %}
+
+                    {% if user.is_authenticated %}
+                        <form method="post" class="mt-3">
+                            {% csrf_token %}
+                            <textarea name="comment_text" class="form-control mb-2" rows="2" placeholder="Ваш комментарий..."></textarea>
+                            <button type="submit" class="btn btn-primary btn-sm rounded-pill">Отправить</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════ ПРАВАЯ КОЛОНКА: ИНГРЕДИЕНТЫ И ИЗБРАННОЕ ═══════ -->
+        <div class="col-lg-4">
+            <!-- Ингредиенты -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white fw-bold">
+                    🛒 Ингредиенты
+                </div>
+                <div class="card-body">
+                    <label class="form-label small fw-bold">Количество порций:</label>
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        {% for p in "123468"|make_list %}
+                            <a href="?portions={{ p }}"
+                               class="btn btn-sm {% if portions == p|add:0 %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill">
+                                {{ p }}
+                            </a>
+                        {% endfor %}
+                    </div>
+
+                    {% for item in ingredients_with_amounts %}
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                            <span>{{ item.ingredient.name }}</span>
+                            <span class="fw-bold">{{ item.amount }} {{ item.unit }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small">Ингредиенты не указаны</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Избранное -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    {% if user.is_authenticated %}
+                        <button id="favoriteBtn" class="btn btn-lg w-100 rounded-pill {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                                onclick="toggleFavorite({{ article.pk }})">
+                            <span id="favIcon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
+                            <span id="favText">{% if is_favorite %}В избранном{% else %}Добавить в избранное{% endif %}</span>
+                        </button>
+                        <small id="favCount" class="text-muted">{{ likes_count }} в избранном</small>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-danger rounded-pill w-100">🤍 Войдите, чтобы добавить в избранное</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- AJAX для лайков и ответов -->
+<!-- ═══════ JS: избранное + жалобы ═══════ -->
 <script>
-// Лайки для рецепта
-document.getElementById('like-btn')?.addEventListener('click', function(e) {
-    e.preventDefault();
-
-    const btn = this;
-    const recipeId = btn.dataset.recipeId;
-
-    fetch(`/favorite/${recipeId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const icon = document.getElementById('like-icon');
-            const count = document.getElementById('likes-count');
-
+// ─── ИЗБРАННОЕ ───
+function toggleFavorite(recipeId) {
+    fetch(`/favorite/${recipeId}/`, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }})
+        .then(response => response.json())
+        .then(data => {
+            const btn = document.getElementById('favoriteBtn');
+            const icon = document.getElementById('favIcon');
+            const text = document.getElementById('favText');
+            const count = document.getElementById('favCount');
             if (data.is_favorited) {
+                btn.className = 'btn btn-lg w-100 rounded-pill btn-danger';
                 icon.textContent = '❤️';
-                btn.classList.remove('btn-outline-danger');
-                btn.classList.add('btn-danger');
+                text.textContent = 'В избранном';
             } else {
+                btn.className = 'btn btn-lg w-100 rounded-pill btn-outline-danger';
                 icon.textContent = '🤍';
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-outline-danger');
+                text.textContent = 'Добавить в избранное';
             }
+            count.textContent = data.likes_count + ' в избранном';
+        });
+}
 
-            count.textContent = data.likes_count;
-        }
+// ─── НОВОЕ: ПОЖАЛОВАТЬСЯ НА КОММЕНТАРИЙ ───
+document.querySelectorAll('.report-comment-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        const statusEl = document.getElementById('report-status-' + commentId);
+
+        const reason = prompt(
+            'Причина жалобы:\n1 — Спам\n2 — Оскорбление\n3 — Не по теме',
+            '1'
+        );
+
+        if (!reason) return;
+
+        const reasonMap = { '1': 'spam', '2': 'abuse', '3': 'offtopic' };
+        const reasonCode = reasonMap[reason] || 'spam';
+
+        const formData = new FormData();
+        formData.append('reason', reasonCode);
+
+        fetch('/comment/' + commentId + '/report/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData,
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                this.disabled = true;
+                this.textContent = '✅ Жалоба отправлена';
+                statusEl.textContent = '(жалоб: ' + data.report_count + ')';
+            } else {
+                statusEl.textContent = '⚠️ ' + data.error;
+                statusEl.classList.add('text-danger');
+            }
+        });
     });
 });
-
-// Показать/скрыть форму ответа
-function toggleReplyForm(commentId, authorName) {
-    const form = document.getElementById('reply-form-' + commentId);
-    if (form.style.display === 'none') {
-        form.style.display = 'block';
-    } else {
-        form.style.display = 'none';
-    }
-}
-
-// Отмена ответа
-function cancelReply(commentId) {
-    const form = document.getElementById('reply-form-' + commentId);
-    form.style.display = 'none';
-    form.querySelector('textarea').value = '';
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
 </script>
-
 {% endblock %}

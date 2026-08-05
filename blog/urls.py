@@ -1,5 +1,4 @@
 from django.urls import path
-from django.contrib.auth.views import LoginView, LogoutView
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -25,34 +24,28 @@ urlpatterns = [
     # Страница профиля автора (по имени пользователя)
     path('author/<str:username>/', views.author_profile_view, name='author_profile'),
 
-    # Войти и выйти из аккаунта
-    path('login/', LoginView.as_view(template_name='blog/login.html'), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-
     # Регистрация и профиль
     path('register/', views.register_view, name='register'),
     path('profile/', views.profile_view, name='profile'),
 
     # ==================== УМНЫЙ ХОЛОДИЛЬНИК ====================
-
-    # Главная страница "Умный Холодильник"
     path('fridge/', views.fridge_view, name='fridge'),
-
-    # Результаты поиска (сессия)
     path('fridge/results/', views.fridge_results_view, name='fridge_results'),
-
-    # Поиск рецептов (JSON - AJAX)
     path('fridge/search/', views.fridge_search_view, name='fridge_search'),
+    path('fridge/save/', views.fridge_save_view, name='fridge_save'),
 
     # ==================== ИЗБРАННОЕ ====================
-
-    # Добавление/удаление рецепта из избранного (JSON - AJAX)
     path('favorite/<int:recipe_id>/', views.favorite_view, name='favorite'),
-
-    # Список всех избранных рецептов пользователя
     path('favorites/', views.favorites_view, name='favorites'),
-    # AJAX - сохранить выбранные ингредиенты
-    path('fridge/save/', views.fridge_save_view, name='fridge_save'),
+
+    # ==================== МОДЕРАЦИЯ КОММЕНТАРИЕВ ====================
+    path('moderate/', views.moderate_view, name='moderate'),
+    path('moderate/approve/<int:comment_id>/', views.moderate_approve_view, name='moderate_approve'),
+    path('moderate/<int:comment_id>/delete/', views.moderate_delete_view, name='moderate_delete'),
+    path('moderate/count/', views.moderate_count_view, name='moderate_count'),
+    path('comment/<int:comment_id>/report/', views.comment_report_view, name='comment_report'),
+    path('moderate/approve-all/', views.moderate_approve_all_view, name='moderate_approve_all'),
+    path('reports/<int:report_id>/dismiss/', views.report_dismiss_view, name='report_dismiss'),
 ]
 
 # Обслуживание медиафайлов в режиме DEBUG

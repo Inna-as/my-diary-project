@@ -5,39 +5,117 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <h1 class="mb-4">{% if form.instance.pk %}Редактировать{% else %}Создать{% endif %} рецепт</h1>
+            <h1 class="mb-4">
+                {% if form.instance.pk %}✏️ Редактировать{% else %}🆕 Создать{% endif %} рецепт
+            </h1>
 
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.title.label }}</label>
-                    {{ form.title }}
+                <!-- ═══════ БЛОК 1: ОСНОВНАЯ ИНФОРМАЦИЯ ═══════ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">📋 Основная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.title.label }}</label>
+                            {{ form.title }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.description.label }}</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.category.label }}</label>
+                            {{ form.category }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.image.label }}</label>
+                            {{ form.image }}
+                            {% if form.instance.image %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Текущее изображение:</small>
+                                    <img src="{{ form.instance.image.url }}" alt="Текущее изображение"
+                                         class="img-thumbnail mt-1" style="max-height: 150px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.description.label }}</label>
-                    {{ form.description }}
+                <!-- ═══════ БЛОК 2: ВРЕМЯ И СЛОЖНОСТЬ ═══════ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">⏱ Время и сложность</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ form.cook_time.label }}</label>
+                                {{ form.cook_time }}
+                                <small class="text-muted">{{ form.cook_time.help_text }}</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">{{ form.difficulty.label }}</label>
+                                {{ form.difficulty }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.category.label }}</label>
-                    {{ form.category }}
+                <!-- ═══════ БЛОК 3: КБЖУ ═══════ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">🔬 Пищевая ценность (на 100 г)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">🔥 {{ form.calories.label }}</label>
+                                {{ form.calories }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">🟥 {{ form.protein.label }}</label>
+                                {{ form.protein }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">🟨 {{ form.fat.label }}</label>
+                                {{ form.fat }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">🟩 {{ form.carbs.label }}</label>
+                                {{ form.carbs }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.image.label }}</label>
-                    {{ form.image }}
+                <!-- ═══════ БЛОК 4: ИНСТРУКЦИИ ═══════ -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📝 Приготовление</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.instructions.label }}</label>
+                            {{ form.instructions }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.instructions.label }}</label>
-                    {{ form.instructions }}
+                <!-- ═══════ КНОПКИ ═══════ -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
+                        {% if form.instance.pk %}💾 Сохранить{% else %}📤 Опубликовать{% endif %}
+                    </button>
+                    <a href="{% url 'blog:index' %}" class="btn btn-outline-secondary btn-lg px-5 rounded-pill">
+                        ✕ Отмена
+                    </a>
                 </div>
-
-                <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
-                    {% if form.instance.pk %}Сохранить{% else %}Опубликовать{% endif %}
-                </button>
             </form>
         </div>
     </div>

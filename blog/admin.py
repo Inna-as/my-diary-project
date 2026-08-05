@@ -2,15 +2,13 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, FoodCategory, Ingredient, Article,
-    RecipeIngredient, IngredientSubstitution, FavoriteRecipe, Comment
+    RecipeIngredient, FavoriteRecipe, Comment
+
 )
 
-# Настройка главного заголовка панели управления в браузере
 admin.site.site_header = "Панель управления - Умный Холодильник"
 admin.site.index_title = "Кулинарная база данных"
 
-
-# ============ РЕГИСТРАЦИЯ НОВЫХ МОДЕЛЕЙ ============
 
 @admin.register(FoodCategory)
 class FoodCategoryAdmin(admin.ModelAdmin):
@@ -27,9 +25,12 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_at')
-    search_fields = ('title', 'instructions')
-    list_filter = ('created_at',)
+    list_display = (
+        'title', 'created_at', 'is_published',
+        'cook_time', 'get_difficulty_display', 'calories'
+    )
+    search_fields = ('title', 'instructions', 'description')
+    list_filter = ('created_at', 'difficulty', 'is_published')
     date_hierarchy = 'created_at'
 
 
@@ -40,10 +41,6 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     search_fields = ('recipe__title', 'ingredient__name')
 
 
-@admin.register(IngredientSubstitution)
-class IngredientSubstitutionAdmin(admin.ModelAdmin):
-    list_display = ('source', 'replacement')
-    search_fields = ('source__name', 'replacement__name')
 
 
 @admin.register(FavoriteRecipe)
@@ -53,7 +50,6 @@ class FavoriteRecipeAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'recipe__title')
 
 
-# ============ АДМИНКА ДЛЯ КОММЕНТАРИЕВ ============
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ['id', 'author', 'article', 'text_preview', 'parent', 'created_at', 'likes_count']
@@ -68,7 +64,6 @@ class CommentAdmin(admin.ModelAdmin):
     text_preview.short_description = 'Текст'
 
 
-# ============ КАСТОМНЫЙ ПОЛЬЗОВАТЕЛЬ ============
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -76,7 +71,7 @@ class CustomUserAdmin(UserAdmin):
     )
 
 
-# ============ РУСИФИКАЦИЯ НАЗВАНИЙ ТАБЛИЦ ============
+# Русификация названий таблиц
 FoodCategory._meta.verbose_name = "Категория продуктов"
 FoodCategory._meta.verbose_name_plural = "Категории продуктов"
 
@@ -89,8 +84,7 @@ Article._meta.verbose_name_plural = "Рецепты"
 RecipeIngredient._meta.verbose_name = "Ингредиент рецепта"
 RecipeIngredient._meta.verbose_name_plural = "Ингредиенты рецептов"
 
-IngredientSubstitution._meta.verbose_name = "Замена ингредиента"
-IngredientSubstitution._meta.verbose_name_plural = "Замены ингредиентов"
+
 
 FavoriteRecipe._meta.verbose_name = "Избранный рецепт"
 FavoriteRecipe._meta.verbose_name_plural = "Избранные рецепты"

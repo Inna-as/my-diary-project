@@ -1,0 +1,226 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+<h2 class="mb-4">🛡️ Модерация</h2>
+
+<!-- ══════════ ВКЛАДКИ ══════════ -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'pending' %}active{% endif %}"
+           href="?tab=pending">
+            📝 На проверке
+            <span id="pendingBadge" class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
+        </a>
+    </li>
+    {% if reports is not None %}
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'reports' %}active{% endif %}"
+           href="?tab=reports">
+            🚨 Жалобы
+            <span class="badge bg-danger ms-1">{{ reports|length }}</span>
+        </a>
+    </li>
+    {% endif %}
+</ul>
+
+<!-- ══════════ ВКЛАДКА: НА ПРОВЕРКЕ ══════════ -->
+{% if tab == 'pending' %}
+
+    {% if pending_comments %}
+    <div class="list-group">
+        {% for comment in pending_comments %}
+        <div class="list-group-item" id="comment-{{ comment.id }}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ comment.author.username }}</strong>
+                    <small class="text-muted">→ рецепт «{{ comment.article.title }}»</small>
+                    <p class="mt-1 mb-2">{{ comment.text }}</p>
+                    <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-success approve-btn"
+                            data-comment-id="{{ comment.id }}">✅ Одобрить</button>
+                    <button class="btn btn-danger delete-btn"
+                            data-comment-id="{{ comment.id }}">🗑 Удалить</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-success">✅ Нет комментариев на проверке.</div>
+    {% endif %}
+
+{% endif %}
+
+<!-- ══════════ ВКЛАДКА: ЖАЛОБЫ ══════════ -->
+{% if tab == 'reports' and reports is not None %}
+
+    {% if reports %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Комментарий</th>
+                    <th>Автор</th>
+                    <th>Рецепт</th>
+                    <th>Пожаловался</th>
+                    <th>Причина</th>
+                    <th>Дата</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr id="report-{{ report.id }}">
+                    <td><small>{{ report.comment.text|truncatechars:60 }}</small></td>
+                    <td>{{ report.comment.author.username }}</td>
+                    <td>
+                        <a href="{% url 'blog:article_detail' report.comment.article.pk %}">
+                            {{ report.comment.article.title|truncatechars:25 }}
+                        </a>
+                    </td>
+                    <td>{{ report.reporter.username }}</td>
+                    <td>
+                        {% if report.reason == 'spam' %}
+                            <span class="badge bg-warning text-dark">Спам</span>
+                        {% elif report.reason == 'abuse' %}
+                            <span class="badge bg-danger">Оскорбление</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Не по теме</span>
+                        {% endif %}
+                    </td>
+                    <td><small>{{ report.created_at|date:"d.m.Y H:i" }}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-danger dismiss-report-btn"
+                                    data-report-id="{{ report.id }}"
+                                    data-comment-id="{{ report.comment.id }}">
+                                ❌ Отклонить
+                            </button>
+                            <button class="btn btn-outline-dark delete-comment-from-report-btn"
+                                    data-comment-id="{{ report.comment.id }}"
+                                    data-report-id="{{ report.id }}">
+                                🗑 Удалить комм.
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-success">✅ Жалоб нет — всё чисто!</div>
+    {% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ═══════════ ОДОБРИТЬ КОММЕНТАРИЙ ═══════════
+document.querySelectorAll('.approve-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        fetch(`/moderate/${commentId}/approve/`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const el = document.getElementById('comment-' + commentId);
+                    if (el) el.remove();
+                    updateBadge();
+                    checkEmpty();
+                }
+            });
+    });
+});
+
+// ═══════════ УДАЛИТЬ КОММЕНТАРИЙ ═══════════
+document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        if (!confirm('Точно удалить комментарий?')) return;
+        fetch(`/moderate/${commentId}/delete/`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const el = document.getElementById('comment-' + commentId);
+                    if (el) el.remove();
+                    updateBadge();
+                    checkEmpty();
+                }
+            });
+    });
+});
+
+// ═══════════ ОТКЛОНИТЬ ЖАЛОБУ ═══════════
+document.querySelectorAll('.dismiss-report-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const reportId = this.dataset.reportId;
+        if (!confirm('Отклонить жалобу? Комментарий останется.')) return;
+        fetch(`/reports/${reportId}/dismiss/`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const el = document.getElementById('report-' + reportId);
+                    if (el) el.remove();
+                    checkEmptyReports();
+                }
+            });
+    });
+});
+
+// ═══════════ УДАЛИТЬ КОММЕНТАРИЙ (из вкладки жалоб) ═══════════
+document.querySelectorAll('.delete-comment-from-report-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        const reportId = this.dataset.reportId;
+        if (!confirm('Точно удалить комментарий?')) return;
+        fetch(`/moderate/${commentId}/delete/`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем комментарий из pending (если есть)
+                    const pendingEl = document.getElementById('comment-' + commentId);
+                    if (pendingEl) pendingEl.remove();
+                    // Удаляем строку жалобы
+                    const reportEl = document.getElementById('report-' + reportId);
+                    if (reportEl) reportEl.remove();
+                    updateBadge();
+                    checkEmptyReports();
+                }
+            });
+    });
+});
+
+// ═══════════ ВСПОМОГАТЕЛЬНЫЕ ═══════════
+function updateBadge() {
+    fetch(`/moderate/count/`)
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('pendingBadge');
+            if (badge) badge.textContent = data.count;
+        });
+}
+
+function checkEmpty() {
+    if (!document.querySelector('.list-group-item')) {
+        const container = document.querySelector('.list-group');
+        if (container) {
+            container.innerHTML = '<div class="alert alert-success">✅ Нет комментариев на проверке.</div>';
+        }
+    }
+}
+
+function checkEmptyReports() {
+    if (!document.querySelector('tbody tr')) {
+        const table = document.querySelector('.table-responsive');
+        if (table) {
+            table.innerHTML = '<div class="alert alert-success">✅ Жалоб нет — всё чисто!</div>';
+        }
+    }
+}
+</script>
+{% endblock %}
