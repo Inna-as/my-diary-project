@@ -385,10 +385,42 @@ def article_delete_view(request, pk):
 def author_profile_view(request, username):
     author = get_object_or_404(CustomUser, username=username)
     total_articles = author.article_set.count()
-    author_articles = author.article_set.all().order_by('-created_at')
+
+    # ❤️ Сумма всех лайков на рецептах автора
+    total_likes = 0
+    for article in author.article_set.all():
+        total_likes += article.favored_by.count()
+
+    # 💬 Количество комментариев под рецептами автора
+    total_comments_on_recipes = Comment.objects.filter(article__author=author).count()
+
+    # ⭐ Рейтинг автора (формула простая)
+    rating = total_likes + total_articles * 2 + total_comments_on_recipes
+
+    # Определяем уровень
+    if rating >= 100:
+        level = '🥇 Мастер-шеф'
+    elif rating >= 50:
+        level = '🥈 Опытный кулинар'
+    elif rating >= 20:
+        level = '🥉 Домашний повар'
+    elif rating >= 5:
+        level = '👨‍🍳 Новичок'
+    else:
+        level = '🌱 Начинающий'
+
+    author_articles_list = author.article_set.all().order_by('-created_at')
+    paginator = Paginator(author_articles_list, 12)
+    page_number = request.GET.get('page')
+    author_articles = paginator.get_page(page_number)
+
     return render(request, 'blog/author_profile.html', {
         'author': author,
         'total_articles': total_articles,
+        'total_likes': total_likes,
+        'total_comments_on_recipes': total_comments_on_recipes,
+        'rating': rating,
+        'level': level,
         'author_articles': author_articles,
         'pending_count': _get_pending_count(request.user),
     })

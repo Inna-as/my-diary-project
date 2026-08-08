@@ -15,7 +15,14 @@
     <div class="recipe-hero-body">
         <h1>{{ article.title }}</h1>
         <div class="recipe-meta-row">
-            <span>👤 {{ article.author.username }}</span>
+            <span>
+    {% if article.author.avatar %}
+    <img src="{{ article.author.avatar.url }}" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:5px;">
+    {% else %}
+    <span style="font-size:1.3rem;vertical-align:middle;">👤</span>
+    {% endif %}
+    <a href="{% url 'blog:author_profile' article.author.username %}" style="color:var(--accent);text-decoration:none;">{{ article.author.username }}</a>
+</span>
             <span>⏱ {% if article.cook_time %}{{ article.cook_time }}{% else %}—{% endif %} мин</span>
             <span>📊 {{ article.get_difficulty_display }}</span>
         </div>
@@ -93,6 +100,19 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Ингредиенты -->
+<div class="ingredients-block">
+    <h3>🧂 Ингредиенты (на {{ portions }} порции)</h3>
+    {% for item in ingredients_with_amounts %}
+    <div class="ingredient-row">
+        <span class="ingredient-name">{{ item.ingredient.name }}</span>
+        <span class="ingredient-amount">{{ item.amount }} {{ item.unit }}</span>
+    </div>
+    {% empty %}
+    <p style="color:var(--text-light);">Ингредиенты не указаны</p>
+    {% endfor %}
+</div>
 <!-- ════════════════════════════════════════ -->
 <!-- 🎬 ВИДЕО РЕЦЕПТА -->
 <!-- ════════════════════════════════════════ -->
@@ -131,19 +151,6 @@
     </div>
 </div>
 {% endif %}
-<!-- Ингредиенты -->
-<div class="ingredients-block">
-    <h3>🧂 Ингредиенты (на {{ portions }} порции)</h3>
-    {% for item in ingredients_with_amounts %}
-    <div class="ingredient-row">
-        <span class="ingredient-name">{{ item.ingredient.name }}</span>
-        <span class="ingredient-amount">{{ item.amount }} {{ item.unit }}</span>
-    </div>
-    {% empty %}
-    <p style="color:var(--text-light);">Ингредиенты не указаны</p>
-    {% endfor %}
-</div>
-
 <!-- Инструкция -->
 <div class="instructions-block">
     <h3>📝 Приготовление</h3>
