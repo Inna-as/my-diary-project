@@ -13,7 +13,7 @@ def branding_context(request):
 
 def greeting_context(request):
 
-    current_time = timezone.localtime(timezone.now())  # локальное время
+    current_time = timezone.localtime(timezone.now())
     hour = current_time.hour
 
     if 5 <= hour < 12:
@@ -30,7 +30,7 @@ def greeting_context(request):
     }
 
 def breadcrumbs(request):
-    """Автоматически определяет хлебные крошки на основе URL."""
+
 
     crumbs = [
         {'title': 'Главная', 'url': '/'},
@@ -49,12 +49,12 @@ def breadcrumbs(request):
     if view_name:
         # Главная
         if view_name == 'blog:index':
-            pass  # оставляем только "Главная"
+            pass
 
         # Детальная страница рецепта
         elif view_name == 'blog:article_detail':
             crumbs.append({'title': 'Каталог рецептов', 'url': reverse('blog:index')})
-            # Название рецепта из request.breadcrumb_title (задаётся в views.py)
+
             title = getattr(request, 'breadcrumb_title', None) or 'Рецепт'
             crumbs.append({'title': title, 'url': None})
 

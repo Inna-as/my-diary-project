@@ -16,9 +16,9 @@ class CustomUser(AbstractUser):
         verbose_name_plural = "Пользователи"
 
 
-# ============ НОВАЯ АРХИТЕКТУРА "УМНЫЙ ХОЛОДИЛЬНИК" ============
+# ============  "УМНЫЙ ХОЛОДИЛЬНИК" ============
 
-# 1. Категории продуктов (Мясо, Овощи, Молочка и т.д.)
+# 1. Категории продуктов
 class FoodCategory(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
 
@@ -98,7 +98,6 @@ class Article(models.Model):
     )
     likes_count = models.PositiveIntegerField(default=0, verbose_name='Количество лайков')
 
-    # ═══════ НОВЫЕ ПОЛЯ: время, сложность, KBJU ═══════
     cook_time = models.PositiveIntegerField(
         "Время приготовления (мин)",
         null=True,
@@ -183,7 +182,7 @@ class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
-    # Древовидные комментарии - поле parent для ответов
+    # Древовидные комментарии
     parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
@@ -247,9 +246,9 @@ class Comment(models.Model):
         return depth
 
 
-# ═══════ ОТДЕЛЬНАЯ МОДЕЛЬ (НЕ внутри Comment!) ═══════
+
 class CommentReport(models.Model):
-    """Жалоба пользователя на комментарий."""
+
     comment = models.ForeignKey(
         Comment,
         on_delete=models.CASCADE,

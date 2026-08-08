@@ -2,7 +2,6 @@ import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -39,9 +38,7 @@ NEWBIE_THRESHOLD = 3
 
 
 def auto_moderate_comment(text, user):
-    """
-    Возвращает: 'approved', 'visible_pending', 'blocked'
-    """
+
     text_lower = text.lower()
     spam_hits = sum(1 for word in SPAM_WORDS if word in text_lower)
     links_count = len(re.findall(r'https?://', text_lower))
@@ -65,7 +62,7 @@ def auto_moderate_comment(text, user):
 
 
 def _get_pending_count(user):
-    """Количество комментариев, требующих проверки."""
+
     if not user.is_authenticated:
         return 0
     if user.is_staff or user.is_superuser:
@@ -215,10 +212,10 @@ def article_detail_view(request, pk):
     return render(request, 'blog/article_detail.html', context)
 
 # ═══════════════════════════════════════════
-#  ФОНОВАЯ ОТПРАВКА ПИСЕМ (не тормозит регистрацию)
+#  ФОНОВАЯ ОТПРАВКА ПИСЕМ
 # ═══════════════════════════════════════════
 def _send_welcome_email(user_email, username):
-    """Отправляет приветственное письмо в отдельном потоке."""
+
     try:
         subject = '🍳 Добро пожаловать на «Еда на любой вкус»!'
         message = render_to_string('email/welcome_email.html', {
@@ -261,7 +258,7 @@ def register_view(request):
     return render(request, 'blog/register.html', {'form': form})
 
 # ============ СОЗДАНИЕ / РЕДАКТИРОВАНИЕ / УДАЛЕНИЕ ============
-@login_required
+
 @login_required
 def article_create_view(request):
     ingredients_qs = Ingredient.objects.all().order_by('name')
@@ -699,7 +696,7 @@ def moderate_approve_view(request, comment_id):
     ):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
 
-    comment.auto_approved = True  # снимаем пометку «надо проверить»
+    comment.auto_approved = True
     comment.save()
 
     return JsonResponse({'success': True})
@@ -711,7 +708,7 @@ def moderate_approve_view(request, comment_id):
 
 @login_required
 def moderate_approve_all_view(request):
-    """Одобряет сразу все непроверенные комментарии."""
+
     user = request.user
     if not (user.is_staff or user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Только для модераторов'}, status=403)
@@ -728,7 +725,6 @@ def moderate_approve_all_view(request):
 
 @login_required
 def moderate_delete_view(request, comment_id):
-    """Удаление комментария (AJAX)."""
     if not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
     comment = get_object_or_404(Comment, id=comment_id)
@@ -788,7 +784,6 @@ def moderate_count_view(request):
 
 @login_required
 def report_dismiss_view(request, report_id):
-    """Удаляет жалобу, комментарий остаётся."""
     if not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
     report = get_object_or_404(CommentReport, id=report_id)
@@ -800,7 +795,7 @@ def report_dismiss_view(request, report_id):
 
 @login_required
 def add_comment_ajax_view(request, article_id):
-    """Добавляет комментарий через AJAX, возвращает JSON с данными нового комментария."""
+
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Только POST'}, status=405)
 

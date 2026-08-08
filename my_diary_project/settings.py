@@ -1,6 +1,3 @@
-import locale
-import os
-import ssl
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -14,7 +11,7 @@ DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = []
 
-# ==================== РЕГИСТРАЦИЯ ПРИЛОЖЕНИЙ ====================
+# Регистрация приложений
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -40,7 +37,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'my_diary_project.urls'
 
-# ==================== НАСТРОЙКА ШАБЛОНОВ ====================
+# Шаблоны
 
 TEMPLATES = [
     {
@@ -63,7 +60,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'my_diary_project.wsgi.application'
 
-# ==================== НАСТРОЙКА БАЗЫ ДАННЫХ ====================
+# База данных
 
 DATABASES = {
     'default': {
@@ -76,7 +73,7 @@ DATABASES = {
     }
 }
 
-# ==================== ВАЛИДАЦИЯ ПАРОЛЕЙ ====================
+# Валидация паролей
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -85,37 +82,32 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ==================== ЯЗЫКОВЫЕ НАСТРОЙКИ ====================
+# Интернационализация
 
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-# ==================== СТАТИЧЕСКИЕ ФАЙЛЫ ====================
+# Статические файлы
 
-# URL-префикс для статических файлов
 STATIC_URL = '/static/'
 
-# Где Django ищет статические файлы внутри проекта
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-# Куда Django соберет статические файлы для продакшена
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# ==================== МЕДИА ФАЙЛЫ ====================
+# Медиафайлы
 
-# URL-префикс для медиафайлов
 MEDIA_URL = '/media/'
 
-# Где хранить загруженные медиафайлы
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==================== НАСТРОЙКА КЕШИРОВАНИЯ ====================
+# Кеширование
 
 CACHES = {
     "default": {
@@ -124,21 +116,19 @@ CACHES = {
     }
 }
 
-# ==================== НАСТРОЙКИ АВТОРИЗАЦИИ ====================
-
-LOGIN_REDIRECT_URL = 'blog:index'
-LOGOUT_REDIRECT_URL = 'blog:index'
-AUTH_USER_MODEL = 'blog.CustomUser'
-
-# Брендинг проекта
-PROJECT_NAME = 'Еда на любой вкус'
-PROJECT_SLUG = 'eda-na-luboy-vkus'
-PROJECT_SLOGAN = 'Твой навигатор на кухне для поиска вкусных рецептов'
+# Авторизация
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+AUTH_USER_MODEL = 'blog.CustomUser'
 
+# Брендинг
 
-# ==================== НАСТРОЙКА ПОЧТЫ ====================
+PROJECT_NAME = 'Еда на любой вкус'
+PROJECT_SLUG = 'eda-na-luboy-vkus'
+PROJECT_SLOGAN = 'Твой навигатор на кухне для поиска вкусных рецептов'
+
+# Почта
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

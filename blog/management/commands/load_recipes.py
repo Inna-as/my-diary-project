@@ -2,17 +2,14 @@ import os
 import json
 from django.core.management.base import BaseCommand
 from blog.models import FoodCategory, Ingredient, Article, RecipeIngredient
+from django.contrib.auth import get_user_model
 
 
 class Command(BaseCommand):
     help = 'Парсер JSON рецептов с умным парсингом количества'
 
     def parse_amount(self, value_str):
-        """
-        Умный парсер количества ингредиентов.
-        - Числа, дроби, диапазоны → конвертирует
-        - Текст, null, пусто → 1.0
-        """
+
         if value_str is None or value_str == '':
             return 1.0
 
@@ -86,7 +83,7 @@ class Command(BaseCommand):
             obj, _ = FoodCategory.objects.get_or_create(name=cat_name)
             cat_objects[cat_name] = obj
 
-        # КАТЕГОРИИ РЕЦЕПТОВ (ПОЛЕ category В Article)
+        # КАТЕГОРИИ РЕЦЕПТОВ (
 
         RECIPE_CATEGORY_MAP = {
             # ===== DESSERT (Десерт) =====
@@ -194,7 +191,7 @@ class Command(BaseCommand):
             'филе': 'second',
             'грудка': 'second',
 
-            # ===== SALAD (Салаты) ===== 👈👈👈 ВАЖНО!
+            # ===== SALAD (Салаты) =====
             'салат': 'salad',
             'винегрет': 'salad',
             'оливье': 'salad',
@@ -239,7 +236,7 @@ class Command(BaseCommand):
             'пунш': 'drink',
             'сбитень': 'drink',
         }
-        from django.contrib.auth import get_user_model
+
         User = get_user_model()
         admin_user = User.objects.filter(is_superuser=True).first()
 
@@ -249,7 +246,7 @@ class Command(BaseCommand):
 
         imported_count = 0
         category_stats = {cat: 0 for cat in RECIPE_CATEGORY_MAP.values()}
-        category_stats['main'] = 0  # Категория по умолчанию
+        category_stats['main'] = 0
 
         self.stdout.write(self.style.SUCCESS("🚀 Начинаем импорт..."))
 
@@ -361,9 +358,6 @@ class Command(BaseCommand):
                                 unit = 'г'
                             else:
                                 unit = str(unit_raw).strip() or 'г'
-
-
-                            # ОПРЕДЕЛЯЕМ КАТЕГОРИЮ ИНГРЕДИЕНТА
 
 
                             # Категория 1: КОЛБАСНЫЕ ИЗДЕЛИЯ
@@ -481,7 +475,7 @@ class Command(BaseCommand):
 
                             # Категория 7: БАКАЛЕЯ
                             elif any(x in ing_name for x in [
-                                # Мука, сахар, соль
+
                                 'мука', 'сахар', 'сахарная пудра', 'соль',
 
                                 # Масла
@@ -582,13 +576,13 @@ class Command(BaseCommand):
                             else:
                                 current_cat = cat_objects["Разное"]
 
-                            # Создаём или получаем ингредиент
+
                             ingredient, created = Ingredient.objects.get_or_create(
                                 name=ing_name,
                                 defaults={'category': current_cat}
                             )
 
-                            # Добавляем ингредиент к рецепту
+
                             try:
                                 if not article.id:
                                     self.stdout.write(self.style.ERROR(

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Article, CustomUser
+from .models import Article, CustomUser, Ingredient
 
 
 # ============ ФОРМА ДЛЯ СОЗДАНИЯ/РЕДАКТИРОВАНИЯ РЕЦЕПТА  ============
@@ -53,10 +53,6 @@ class ArticleForm(forms.ModelForm):
                 'placeholder': 'г',
                 'min': 0,
             }),
-            'video_url': forms.URLInput(attrs={
-                'class': 'form-control rounded-pill px-3',
-                'placeholder': 'https://www.youtube.com/watch?v=...'
-            }),
             'fat': forms.NumberInput(attrs={
                 'class': 'form-control rounded-pill px-3',
                 'placeholder': 'г',
@@ -66,6 +62,10 @@ class ArticleForm(forms.ModelForm):
                 'class': 'form-control rounded-pill px-3',
                 'placeholder': 'г',
                 'min': 0,
+            }),
+            'video_url': forms.URLInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'https://www.youtube.com/watch?v=...'
             }),
         }
 
@@ -90,17 +90,17 @@ class CustomUserCreationForm(UserCreationForm):
         fields = ('username', 'email')
 
 
-# Форма для выбора ингредиентов в холодильнике
+# ============ ФОРМА ДЛЯ ХОЛОДИЛЬНИКА ============
 class FridgeForm(forms.Form):
     ingredients = forms.ModelMultipleChoiceField(
-        queryset=None,
+        queryset=Ingredient.objects.all(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         required=False,
         label='Выберите продукты, которые у вас есть'
     )
 
 
-# Форма для калькулятора порций
+# ============ КАЛЬКУЛЯТОР ПОРЦИЙ ============
 class PortionsForm(forms.Form):
     portions = forms.IntegerField(
         min_value=1,
@@ -116,10 +116,10 @@ class PortionsForm(forms.Form):
     )
 
 
-# Форма для добавления ингредиента в рецепт
+# ============ ФОРМА ДОБАВЛЕНИЯ ИНГРЕДИЕНТА В РЕЦЕПТ ============
 class RecipeIngredientForm(forms.Form):
     ingredient = forms.ModelChoiceField(
-        queryset=None,
+        queryset=Ingredient.objects.all(),
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Ингредиент'
     )
@@ -142,7 +142,7 @@ class RecipeIngredientForm(forms.Form):
     )
 
 
-# Форма для поиска рецептов по ингредиентам
+# ============ ПОИСК РЕЦЕПТОВ ============
 class RecipeSearchForm(forms.Form):
     search_query = forms.CharField(
         required=False,
