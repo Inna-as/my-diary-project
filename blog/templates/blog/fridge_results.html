@@ -2,486 +2,140 @@
 {% load static %}
 
 {% block content %}
-<!-- Хлебные крошки -->
-<nav aria-label="breadcrumb" class="bg-light py-2 mb-4">
-    <div class="container">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item">
-                <a href="{% url 'blog:index' %}" class="text-decoration-none">
-                    🏠 Главная
-                </a>
-            </li>
-            <li class="breadcrumb-item">
-                <a href="{% url 'blog:fridge' %}" class="text-decoration-none">
-                    🧊 Поиск по продуктам
-                </a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                📋 Результаты
-            </li>
-        </ol>
-    </div>
-</nav>
+<h1 class="page-title">🧊 Результаты поиска</h1>
 
-<div class="container py-4">
-    <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-primary">🧊 Результаты поиска</h1>
-
-        {% if is_category_only %}
-        <p class="lead text-muted">
-            Категория: <strong>{{ category_name }}</strong>
-        </p>
-        {% else %}
-        <p class="lead text-muted">
-            Выбрано продуктов: <strong>{{ selected_count }}</strong>
-            {% if selected_category %}| Категория: <strong>{{ category_name }}</strong>{% endif %}
-        </p>
-        {% endif %}
-    </div>
-
-    <!-- Если поиск только по категории -->
-    {% if is_category_only and missing_three_plus %}
-    <div class="row">
-        <div class="col-md-12">
-            <h2 class="text-center mb-4">
-                <span class="badge bg-info rounded-pill px-4 py-2">📋 Рецепты из категории "{{ category_name }}"</span>
-            </h2>
-
-            <div class="row">
-                {% for item in missing_three_plus %}
-                <div class="col-md-4 mb-4">
-                    <div class="card shadow h-100">
-                        {% if item.recipe.image %}
-                        <img src="{{ item.recipe.image.url }}" class="card-img-top rounded" style="max-height: 200px; object-fit: cover;" alt="{{ item.recipe.title }}">
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title fw-bold">{{ item.recipe.title }}</h5>
-
-                            <p class="card-text text-muted small mb-2">
-                                Категория: {{ item.recipe.get_category_display }}
-                            </p>
-
-                            {% if item.recipe.description %}
-                            <p class="card-text">{{ item.recipe.description|truncatewords:15 }}</p>
-                            {% endif %}
-
-                            <p class="card-text text-muted small mb-2">
-                                Ингредиентов: {{ item.total }}
-                            </p>
-
-                           <p class="card-text">
-    <strong>Ингредиенты:</strong>
-    {% for ing in item.missing_ingredients %}
-        {{ ing.name }}{% if not forloop.last %}, {% endif %}
-    {% endfor %}
+{% if is_category_only %}
+<p class="page-subtitle">Категория: <strong>{{ category_name }}</strong></p>
+{% else %}
+<p class="page-subtitle">
+    Выбрано продуктов: <strong>{{ selected_count }}</strong>
+    {% if selected_category %}| Категория: <strong>{{ category_name }}</strong>{% endif %}
 </p>
+{% endif %}
 
-<!-- Блок с магазинами -->
-{% if item.missing_ingredients %}
-<div class="mt-3">
-    <small class="text-muted d-block mb-2">🛒 Купить все продукты:</small>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="https://samokat.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Самокате">
-            <img src="{% static 'images/shops/samokat.png' %}"
-                 alt="Самокат"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Самокат</span>
-        </a>
-        <a href="https://lavka.yandex.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Яндекс Лавке">
-            <img src="{% static 'images/shops/yandex-lavka.png' %}"
-                 alt="Яндекс Лавка"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Яндекс Лавка</span>
-        </a>
-        <a href="https://vkusvill.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в ВкусВилле">
-            <img src="{% static 'images/shops/vkusvill.png' %}"
-                 alt="ВкусВилл"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>ВкусВилл</span>
-        </a>
-    </div>
+<!-- Нет результатов -->
+{% if no_results %}
+<div class="card card--centered" style="text-align: center;">
+    <h3 class="card-title">😕 Рецепты не найдены</h3>
+    <p style="color: var(--text-light);">К сожалению, мы не нашли рецептов с выбранными параметрами.</p>
+    <hr style="border-color: var(--border); margin: 16px 0;">
+    <p style="font-weight: 600;">Советы:</p>
+    <ul style="text-align: left; color: var(--text-light); font-size: 0.9rem; line-height: 1.8;">
+        <li>Проверьте правильность написания ингредиентов</li>
+        <li>Попробуйте выбрать больше продуктов</li>
+        <li>Измените категорию блюда или выберите «Все категории»</li>
+    </ul>
+    <a href="{% url 'blog:fridge' %}" class="btn btn-outline" style="margin-top: 8px;">🔙 Вернуться к поиску</a>
 </div>
 {% endif %}
 
-<a href="{% url 'blog:article_detail' item.recipe.id %}" class="btn btn-primary btn-sm">
-    🍳 Посмотреть рецепт
-</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Если нет результатов -->
-    {% if no_results %}
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="alert alert-warning shadow">
-                <h4>😕 Рецепты не найдены</h4>
-                <p>К сожалению, мы не нашли рецептов с выбранными параметрами.</p>
-                <hr>
-                <p class="mb-0">
-                    <strong>Советы:</strong>
-                </p>
-                <ul class="mb-3">
-                    <li>Проверьте правильность написания ингредиентов</li>
-                    <li>Попробуйте выбрать больше продуктов</li>
-                    <li>Измените категорию блюда или выберите "Все категории"</li>
-                    <li>Некоторые ингредиенты могут не использоваться в текущей базе рецептов</li>
-                </ul>
-                <a href="{% url 'blog:fridge' %}" class="btn btn-primary">🔙 Вернуться к поиску</a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Если есть результаты (поиск по ингредиентам) -->
-    {% if not is_category_only and can_cook or missing_one or missing_two or missing_three_plus %}
-
-    <!-- СЕКЦИЯ: ГОТОВЫ ПРИГОТОВИТЬ -->
-    {% if can_cook %}
-    <div class="mb-5">
-        <h2 class="text-center mb-4">
-            <span class="badge bg-success rounded-pill px-4 py-2">✅ Можно приготовить сейчас!</span>
-        </h2>
-
-        <div class="row">
-            {% for item in can_cook %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow h-100 border-success">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">{{ item.recipe.title }}</h5>
-                        <p class="card-text text-muted small mb-2">
-                            Категория: {{ item.recipe.get_category_display }}
-                        </p>
-                        <p class="card-text text-muted small mb-2">
-                            Совпадений: {{ item.matches }}/{{ item.total }}
-                        </p>
-                        {% if item.recipe.description %}
-                        <p class="card-text">{{ item.recipe.description|truncatewords:15 }}</p>
-                        {% endif %}
-                        <a href="{% url 'blog:article_detail' item.recipe.id %}" class="btn btn-success btn-sm">
-                            🍳 Посмотреть рецепт
-                        </a>
-                    </div>
+<!-- Результаты -->
+{% if can_cook %}
+<h3 class="page-subtitle" style="margin-bottom: 16px;">✅ Можно приготовить сейчас!</h3>
+<div class="recipe-grid" style="margin-bottom: 32px;">
+    {% for item in can_cook %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' item.recipe.id %}">
+            {% if item.recipe.image %}
+                <img src="{{ item.recipe.image.url }}" alt="{{ item.recipe.title }}" class="recipe-card-img">
+            {% else %}
+                <div class="recipe-card-img" style="background: var(--pink);"></div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">{{ item.recipe.title }}</div>
+                <div class="recipe-card-meta">
+                    <span>{{ item.recipe.get_category_display }}</span>
+                    <span>✅ {{ item.matches }}/{{ item.total }}</span>
                 </div>
             </div>
-            {% endfor %}
-        </div>
+        </a>
     </div>
-    {% endif %}
-
-    <!-- СЕКЦИЯ: НЕ ХВАТАЕТ 1 ИНГРЕДИЕНТА -->
-    {% if missing_one %}
-    <div class="mb-5">
-        <h2 class="text-center mb-4">
-            <span class="badge bg-warning rounded-pill px-4 py-2">🥄 Не хватает 1 ингредиента</span>
-        </h2>
-
-        <div class="row">
-            {% for item in missing_one %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">{{ item.recipe.title }}</h5>
-                        <p class="card-text text-muted small mb-2">
-                            Категория: {{ item.recipe.get_category_display }}
-                        </p>
-                        <p class="card-text text-muted small mb-2">
-                            Совпадений: {{ item.matches }}/{{ item.total }}
-                        </p>
-                       <p class="card-text">
-    <strong>Не хватает:</strong>
-    {% for ing in item.missing_ingredients %}
-        {{ ing.name }}{% if not forloop.last %}, {% endif %}
     {% endfor %}
-</p>
-
-<!-- Блок с магазинами -->
-{% if item.missing_ingredients %}
-<div class="mt-3">
-    <small class="text-muted d-block mb-2">🛒 Купить недостающие продукты:</small>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="https://samokat.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Самокате">
-            <img src="{% static 'images/shops/samokat.png' %}"
-                 alt="Самокат"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Самокат</span>
-        </a>
-        <a href="https://lavka.yandex.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Яндекс Лавке">
-            <img src="{% static 'images/shops/yandex-lavka.png' %}"
-                 alt="Яндекс Лавка"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Яндекс Лавка</span>
-        </a>
-        <a href="https://vkusvill.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в ВкусВилле">
-            <img src="{% static 'images/shops/vkusvill.png' %}"
-                 alt="ВкусВилл"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>ВкусВилл</span>
-        </a>
-    </div>
 </div>
 {% endif %}
 
-<a href="{% url 'blog:article_detail' item.recipe.id %}" class="btn btn-primary btn-sm">
-    🍳 Посмотреть рецепт
-</a>
-                    </div>
+{% if missing_one %}
+<h3 class="page-subtitle" style="margin-bottom: 16px;">🥄 Не хватает 1 ингредиента</h3>
+<div class="recipe-grid" style="margin-bottom: 32px;">
+    {% for item in missing_one %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' item.recipe.id %}">
+            {% if item.recipe.image %}
+                <img src="{{ item.recipe.image.url }}" alt="{{ item.recipe.title }}" class="recipe-card-img">
+            {% else %}
+                <div class="recipe-card-img" style="background: var(--pink);"></div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">{{ item.recipe.title }}</div>
+                <div class="recipe-card-meta">
+                    <span>{{ item.recipe.get_category_display }}</span>
+                    <span>🥄 {{ item.matches }}/{{ item.total }}</span>
                 </div>
+                <small style="color: var(--accent); margin-top: 6px;">
+                    Не хватает: {% for ing in item.missing_ingredients %}{{ ing.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </small>
             </div>
-            {% endfor %}
-        </div>
+        </a>
     </div>
-    {% endif %}
-
-    <!-- СЕКЦИЯ: НЕ ХВАТАЕТ 2 ИНГРЕДИЕНТА -->
-    {% if missing_two %}
-    <div class="mb-5">
-        <h2 class="text-center mb-4">
-            <span class="badge bg-info rounded-pill px-4 py-2">🥄 Не хватает 2 ингредиента</span>
-        </h2>
-
-        <div class="row">
-            {% for item in missing_two %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">{{ item.recipe.title }}</h5>
-                        <p class="card-text text-muted small mb-2">
-                            Категория: {{ item.recipe.get_category_display }}
-                        </p>
-                        <p class="card-text text-muted small mb-2">
-                            Совпадений: {{ item.matches }}/{{ item.total }}
-                        </p>
-                       <p class="card-text">
-    <strong>Не хватает:</strong>
-    {% for ing in item.missing_ingredients %}
-        {{ ing.name }}{% if not forloop.last %}, {% endif %}
     {% endfor %}
-</p>
-
-<!-- Блок с магазинами -->
-{% if item.missing_ingredients %}
-<div class="mt-3">
-    <small class="text-muted d-block mb-2">🛒 Купить недостающие продукты:</small>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="https://samokat.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Самокате">
-            <img src="{% static 'images/shops/samokat.png' %}"
-                 alt="Самокат"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Самокат</span>
-        </a>
-        <a href="https://lavka.yandex.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Яндекс Лавке">
-            <img src="{% static 'images/shops/yandex-lavka.png' %}"
-                 alt="Яндекс Лавка"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Яндекс Лавка</span>
-        </a>
-        <a href="https://vkusvill.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в ВкусВилле">
-            <img src="{% static 'images/shops/vkusvill.png' %}"
-                 alt="ВкусВилл"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>ВкусВилл</span>
-        </a>
-    </div>
 </div>
 {% endif %}
 
-<a href="{% url 'blog:article_detail' item.recipe.id %}" class="btn btn-primary btn-sm">
-    🍳 Посмотреть рецепт
-</a>
-                    </div>
+{% if missing_two %}
+<h3 class="page-subtitle" style="margin-bottom: 16px;">🥄 Не хватает 2 ингредиентов</h3>
+<div class="recipe-grid" style="margin-bottom: 32px;">
+    {% for item in missing_two %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' item.recipe.id %}">
+            {% if item.recipe.image %}
+                <img src="{{ item.recipe.image.url }}" alt="{{ item.recipe.title }}" class="recipe-card-img">
+            {% else %}
+                <div class="recipe-card-img" style="background: var(--pink);"></div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">{{ item.recipe.title }}</div>
+                <div class="recipe-card-meta">
+                    <span>{{ item.recipe.get_category_display }}</span>
+                    <span>🥄 {{ item.matches }}/{{ item.total }}</span>
                 </div>
+                <small style="color: var(--accent); margin-top: 6px;">
+                    Не хватает: {% for ing in item.missing_ingredients %}{{ ing.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </small>
             </div>
-            {% endfor %}
-        </div>
+        </a>
     </div>
-    {% endif %}
-
-    <!-- СЕКЦИЯ: НЕ ХВАТАЕТ 3+ ИНГРЕДИЕНТА -->
-    {% if missing_three_plus %}
-    <div class="mb-5">
-        <h2 class="text-center mb-4">
-            <span class="badge bg-secondary rounded-pill px-4 py-2">🥄 Не хватает 3+ ингредиентов</span>
-        </h2>
-
-        <div class="row">
-            {% for item in missing_three_plus %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">{{ item.recipe.title }}</h5>
-                        <p class="card-text text-muted small mb-2">
-                            Категория: {{ item.recipe.get_category_display }}
-                        </p>
-                        <p class="card-text text-muted small mb-2">
-                            Совпадений: {{ item.matches }}/{{ item.total }}
-                        </p>
-   <p class="card-text">
-    <strong>Не хватает:</strong>
-    {% for ing in item.missing_ingredients %}
-        {{ ing.name }}{% if not forloop.last %}, {% endif %}
     {% endfor %}
-</p>
-
-<!-- Блок с магазинами -->
-{% if item.missing_ingredients %}
-<div class="mt-3">
-    <small class="text-muted d-block mb-2">🛒 Купить недостающие продукты:</small>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="https://samokat.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Самокате">
-            <img src="{% static 'images/shops/samokat.png' %}"
-                 alt="Самокат"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Самокат</span>
-        </a>
-        <a href="https://lavka.yandex.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в Яндекс Лавке">
-            <img src="{% static 'images/shops/yandex-lavka.png' %}"
-                 alt="Яндекс Лавка"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>Яндекс Лавка</span>
-        </a>
-        <a href="https://vkusvill.ru/"
-           class="btn btn-outline-success d-flex align-items-center"
-           target="_blank"
-           title="Купить в ВкусВилле">
-            <img src="{% static 'images/shops/vkusvill.png' %}"
-                 alt="ВкусВилл"
-                 class="shop-logo me-2"
-                 style="height: 24px; width: auto;">
-            <span>ВкусВилл</span>
-        </a>
-    </div>
 </div>
 {% endif %}
 
-<a href="{% url 'blog:article_detail' item.recipe.id %}" class="btn btn-primary btn-sm">
-    🍳 Посмотреть рецепт
-</a>
-                    </div>
+{% if missing_three_plus %}
+<h3 class="page-subtitle" style="margin-bottom: 16px;">🥄 Не хватает 3+ ингредиентов</h3>
+<div class="recipe-grid" style="margin-bottom: 32px;">
+    {% for item in missing_three_plus %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' item.recipe.id %}">
+            {% if item.recipe.image %}
+                <img src="{{ item.recipe.image.url }}" alt="{{ item.recipe.title }}" class="recipe-card-img">
+            {% else %}
+                <div class="recipe-card-img" style="background: var(--pink);"></div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">{{ item.recipe.title }}</div>
+                <div class="recipe-card-meta">
+                    <span>{{ item.recipe.get_category_display }}</span>
+                    <span>🥄 {{ item.matches }}/{{ item.total }}</span>
                 </div>
+                <small style="color: var(--text-light); margin-top: 6px;">
+                    Не хватает: {% for ing in item.missing_ingredients %}{{ ing.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </small>
             </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-    {% endif %}
-
-    <!-- Кнопка вернуться назад -->
-    <div class="text-center mt-5">
-        <a href="{% url 'blog:fridge' %}" class="btn btn-outline-primary btn-lg px-5 rounded-pill">
-            🔙 Вернуться к поиску
         </a>
     </div>
+    {% endfor %}
 </div>
+{% endif %}
 
-<!-- Плавающая кнопка "Наверх" -->
-<button id="scrollTopBtn" class="btn-scroll-top" title="Наверх">
-    ⬆️
-</button>
-
-<style>
-.btn-scroll-top {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6c757d, #495057);
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    z-index: 1000;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}
-
-.btn-scroll-top:hover {
-    background: linear-gradient(135deg, #5a6268, #343a40);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.btn-scroll-top.show {
-    display: flex;
-}
-
-.btn-scroll-top:active {
-    transform: scale(0.95);
-}
-</style>
-
-<script>
-// Показываем/скрываем кнопку при скролле
-window.addEventListener('scroll', function() {
-    const scrollTopBtn = document.getElementById('scrollTopBtn');
-    if (window.pageYOffset > 300) {
-        scrollTopBtn.classList.add('show');
-    } else {
-        scrollTopBtn.classList.remove('show');
-    }
-});
-
-// Плавный скролл наверх при клике
-document.getElementById('scrollTopBtn').addEventListener('click', function() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-});
-</script>
-
+<div style="text-align: center; margin-top: 32px;">
+    <a href="{% url 'blog:fridge' %}" class="btn btn-outline">🔙 Вернуться к поиску</a>
+</div>
 {% endblock %}

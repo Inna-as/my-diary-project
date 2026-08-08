@@ -20,7 +20,7 @@ urlpatterns = [
 
     # Удаление статьи
     path('article/<int:pk>/delete/', views.article_delete_view, name='article_delete'),
-
+    path('article/<int:article_id>/comment/add/', views.add_comment_ajax_view, name='add_comment_ajax'),
     # Страница профиля автора (по имени пользователя)
     path('author/<str:username>/', views.author_profile_view, name='author_profile'),
 

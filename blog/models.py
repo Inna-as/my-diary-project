@@ -115,6 +115,12 @@ class Article(models.Model):
     protein = models.PositiveIntegerField("Белки (г)", null=True, blank=True)
     fat = models.PositiveIntegerField("Жиры (г)", null=True, blank=True)
     carbs = models.PositiveIntegerField("Углеводы (г)", null=True, blank=True)
+    video_url = models.URLField(
+        "Ссылка на видео",
+        blank=True,
+        null=True,
+        help_text="Вставьте ссылку на YouTube / Vimeo / Rutube / Яндекс.Видео"
+    )
 
     def __str__(self):
         return self.title

@@ -1,246 +1,495 @@
 {% extends 'blog/base.html' %}
 {% load static %}
-{% load blog_filters %}
+
+{% block title %}{{ article.title }} — Точка вкуса{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row">
-        <!-- ═══════ ЛЕВАЯ КОЛОНКА: ОСНОВНАЯ ИНФОРМАЦИЯ ═══════ -->
-        <div class="col-lg-8">
-            <h1 class="fw-bold mb-2">{{ article.title }}</h1>
 
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                <span class="badge bg-success rounded-pill">{{ article.get_category_display }}</span>
-                <span class="badge bg-info rounded-pill">{{ article.get_difficulty_display }}</span>
-                {% if article.cook_time %}
-                    <span class="badge bg-warning text-dark rounded-pill">⏱ {{ article.cook_time }} мин</span>
-                {% endif %}
-            </div>
+<!-- Герой -->
+<div class="recipe-hero">
+    {% if article.image %}
+    <img src="{{ article.image.url }}" alt="{{ article.title }}" class="recipe-hero-img">
+    {% else %}
+    <div class="recipe-hero-img" style="display:flex;align-items:center;justify-content:center;font-size:4rem;background:var(--pink);">🍽️</div>
+    {% endif %}
+    <div class="recipe-hero-body">
+        <h1>{{ article.title }}</h1>
+        <div class="recipe-meta-row">
+            <span>👤 {{ article.author.username }}</span>
+            <span>⏱ {% if article.cook_time %}{{ article.cook_time }}{% else %}—{% endif %} мин</span>
+            <span>📊 {{ article.get_difficulty_display }}</span>
+        </div>
 
-            <p class="text-muted small">
-                Автор: <strong>{{ article.author.username }}</strong> |
-                Опубликовано: {{ article.created_at|date:"d.m.Y в H:i" }}
-            </p>
-
-            {% if user.is_authenticated and can_edit %}
-                <div class="mb-3">
-                    <a href="{% url 'blog:article_update' article.pk %}" class="btn btn-sm btn-outline-primary">✏️ Редактировать</a>
-                    <a href="{% url 'blog:article_delete' article.pk %}" class="btn btn-sm btn-outline-danger">🗑️ Удалить</a>
-                </div>
-            {% endif %}
-
-            <!-- ═══════ БЛОК КБЖУ ═══════ -->
-            {% if article.calories or article.protein or article.fat or article.carbs %}
-            <div class="card shadow-sm mb-4 border-warning">
-                <div class="card-header bg-warning text-dark fw-bold">
-                    🔬 Пищевая ценность (на 100 г)
-                </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        {% if article.calories %}
-                        <div class="col">
-                            <div class="fs-4 fw-bold text-danger">🔥 {{ article.calories }}</div>
-                            <small class="text-muted">ккал</small>
-                        </div>
-                        {% endif %}
-                        {% if article.protein %}
-                        <div class="col">
-                            <div class="fs-4 fw-bold text-danger">🟥 {{ article.protein }} г</div>
-                            <small class="text-muted">Белки</small>
-                        </div>
-                        {% endif %}
-                        {% if article.fat %}
-                        <div class="col">
-                            <div class="fs-4 fw-bold text-warning">🟨 {{ article.fat }} г</div>
-                            <small class="text-muted">Жиры</small>
-                        </div>
-                        {% endif %}
-                        {% if article.carbs %}
-                        <div class="col">
-                            <div class="fs-4 fw-bold text-success">🟩 {{ article.carbs }} г</div>
-                            <small class="text-muted">Углеводы</small>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- ═══════ ОПИСАНИЕ ═══════ -->
-            {% if article.description %}
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-body">
-                        <p class="card-text">{{ article.description }}</p>
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- ═══════ ИЗОБРАЖЕНИЕ ═══════ -->
-            {% if article.image %}
-                <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded shadow-sm mb-4" style="max-height: 400px; width: 100%; object-fit: cover;">
-            {% endif %}
-
-            <!-- ═══════ ИНСТРУКЦИИ ═══════ -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white fw-bold">
-                    📝 Приготовление
-                </div>
-                <div class="card-body" style="white-space: pre-line;">
-                    {{ article.instructions }}
-                </div>
-            </div>
-
-            <!-- ═══════ КОММЕНТАРИИ ═══════ -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-secondary text-white fw-bold">
-                    💬 Комментарии ({{ comments.count }})
-                </div>
-                <div class="card-body">
-                    {% for comment in comments %}
-                        <div class="mb-3 border-bottom pb-2">
-                            <strong>{{ comment.author.username }}</strong>
-                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
-
-                            <!-- НОВОЕ: фильтр мата -->
-                            <p class="mb-1">{{ comment.text|censor }}</p>
-
-                            <!-- НОВОЕ: кнопка «Пожаловаться» -->
-                            {% if user.is_authenticated and user != comment.author %}
-                            <div class="mt-1">
-                                <button class="btn btn-outline-warning btn-sm report-comment-btn"
-                                        data-comment-id="{{ comment.id }}">
-                                    🚩 Пожаловаться
-                                </button>
-                                <small class="text-muted report-status" id="report-status-{{ comment.id }}"></small>
-                            </div>
-                            {% endif %}
-                        </div>
-                    {% empty %}
-                        <p class="text-muted">Пока нет комментариев. Будьте первым!</p>
-                    {% endfor %}
-
-                    {% if user.is_authenticated %}
-                        <form method="post" class="mt-3">
-                            {% csrf_token %}
-                            <textarea name="comment_text" class="form-control mb-2" rows="2" placeholder="Ваш комментарий..."></textarea>
-                            <button type="submit" class="btn btn-primary btn-sm rounded-pill">Отправить</button>
-                        </form>
-                    {% endif %}
-                </div>
+        <!-- Количество порций -->
+        <div style="margin:15px 0;">
+            <strong>🔢 Количество порций:</strong>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                {% with current=portions|default:1 %}
+                {% for p in "12346" %}
+                <a href="?portions={{ p }}"
+                   class="btn btn-sm"
+                   style="{% if current|add:0 == p|add:0 %}background:var(--accent);color:#fff;{% else %}background:var(--card-bg);color:var(--text);{% endif %}padding:5px 12px;border-radius:8px;text-decoration:none;">
+                    {{ p }}
+                </a>
+                {% endfor %}
+                {% endwith %}
             </div>
         </div>
 
-        <!-- ═══════ ПРАВАЯ КОЛОНКА: ИНГРЕДИЕНТЫ И ИЗБРАННОЕ ═══════ -->
-        <div class="col-lg-4">
-            <!-- Ингредиенты -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-success text-white fw-bold">
-                    🛒 Ингредиенты
-                </div>
-                <div class="card-body">
-                    <label class="form-label small fw-bold">Количество порций:</label>
-                    <div class="d-flex flex-wrap gap-1 mb-3">
-                        {% for p in "123468"|make_list %}
-                            <a href="?portions={{ p }}"
-                               class="btn btn-sm {% if portions == p|add:0 %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill">
-                                {{ p }}
-                            </a>
-                        {% endfor %}
-                    </div>
-
-                    {% for item in ingredients_with_amounts %}
-                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-                            <span>{{ item.ingredient.name }}</span>
-                            <span class="fw-bold">{{ item.amount }} {{ item.unit }}</span>
-                        </div>
-                    {% empty %}
-                        <p class="text-muted small">Ингредиенты не указаны</p>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Избранное -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body text-center">
-                    {% if user.is_authenticated %}
-                        <button id="favoriteBtn" class="btn btn-lg w-100 rounded-pill {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %}"
-                                onclick="toggleFavorite({{ article.pk }})">
-                            <span id="favIcon">{% if is_favorite %}❤️{% else %}🤍{% endif %}</span>
-                            <span id="favText">{% if is_favorite %}В избранном{% else %}Добавить в избранное{% endif %}</span>
-                        </button>
-                        <small id="favCount" class="text-muted">{{ likes_count }} в избранном</small>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-outline-danger rounded-pill w-100">🤍 Войдите, чтобы добавить в избранное</a>
-                    {% endif %}
-                </div>
-            </div>
+        <div class="recipe-actions">
+            {% if user.is_authenticated %}
+            <button class="btn btn-outline btn-sm favorite-btn" data-recipe-id="{{ article.pk }}">
+                {% if is_favorite %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" stroke-width="2" style="vertical-align:-3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                {% else %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="vertical-align:-3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                {% endif %}
+                <span class="like-count">{{ likes_count }}</span>
+            </button>
+            {% else %}
+            <span style="font-size:1.2rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="vertical-align:-3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span class="like-count">{{ likes_count }}</span>
+            </span>
+            {% endif %}
+            {% if user == article.author or user.is_staff %}
+            <a href="{% url 'blog:article_update' article.pk %}" class="btn btn-outline btn-sm">✏️ Редактировать</a>
+            <a href="{% url 'blog:article_delete' article.pk %}" class="btn btn-danger btn-sm">🗑 Удалить</a>
+            {% endif %}
         </div>
     </div>
 </div>
+<!-- ════════════════════════════════════════ -->
+<!-- 🔬 ПИЩЕВАЯ ЦЕННОСТЬ (КБЖУ) -->
+<!-- ════════════════════════════════════════ -->
+{% if article.calories or article.protein or article.fat or article.carbs %}
+<div class="card" style="margin-bottom:20px;">
+    <h3 class="card-title" style="margin-bottom:16px;">🔬 Пищевая ценность (на 100 г)</h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;">
+        {% if article.calories %}
+        <div style="text-align:center;min-width:80px;">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--text);">{{ article.calories }}</div>
+            <div style="font-size:0.78rem;color:var(--text-light);">🔥 ккал</div>
+        </div>
+        {% endif %}
+        {% if article.protein %}
+        <div style="text-align:center;min-width:80px;">
+            <div style="font-size:1.5rem;font-weight:700;color:#b85c3a;">{{ article.protein }}</div>
+            <div style="font-size:0.78rem;color:var(--text-light);">🟥 Белки (г)</div>
+        </div>
+        {% endif %}
+        {% if article.fat %}
+        <div style="text-align:center;min-width:80px;">
+            <div style="font-size:1.5rem;font-weight:700;color:#d4a040;">{{ article.fat }}</div>
+            <div style="font-size:0.78rem;color:var(--text-light);">🟨 Жиры (г)</div>
+        </div>
+        {% endif %}
+        {% if article.carbs %}
+        <div style="text-align:center;min-width:80px;">
+            <div style="font-size:1.5rem;font-weight:700;color:#5a8f4a;">{{ article.carbs }}</div>
+            <div style="font-size:0.78rem;color:var(--text-light);">🟩 Углеводы (г)</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<!-- ════════════════════════════════════════ -->
+<!-- 🎬 ВИДЕО РЕЦЕПТА -->
+<!-- ════════════════════════════════════════ -->
+{% if article.video_url %}
+<div class="card" style="margin-bottom: 20px;">
+    <h3 class="card-title">🎬 Видео рецепт</h3>
+    <div class="video-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:var(--radius-sm);">
+        {% if 'youtube.com' in article.video_url or 'youtu.be' in article.video_url %}
+            {% with video_id=article.video_url|make_list|slice:'-11:'|join:'' %}
+            <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;"
+                    src="https://www.youtube.com/embed/{{ video_id|cut:'?si='|slice:':11' }}"
+                    frameborder="0" allowfullscreen>
+            </iframe>
+            {% endwith %}
+        {% elif 'rutube.ru' in article.video_url %}
+            {% with video_id=article.video_url|cut:'https://rutube.ru/video/'|cut:'/' %}
+            <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;"
+                    src="https://rutube.ru/play/embed/{{ video_id }}"
+                    frameborder="0" allowfullscreen>
+            </iframe>
+            {% endwith %}
+        {% elif 'vimeo.com' in article.video_url %}
+            {% with video_id=article.video_url|cut:'https://vimeo.com/'|cut:'/' %}
+            <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;"
+                    src="https://player.vimeo.com/video/{{ video_id }}"
+                    frameborder="0" allowfullscreen>
+            </iframe>
+            {% endwith %}
+        {% else %}
+            <div style="padding:20px;text-align:center;">
+                <a href="{{ article.video_url }}" target="_blank" class="btn btn-primary">
+                    ▶️ Смотреть видео на внешнем сайте
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+<!-- Ингредиенты -->
+<div class="ingredients-block">
+    <h3>🧂 Ингредиенты (на {{ portions }} порции)</h3>
+    {% for item in ingredients_with_amounts %}
+    <div class="ingredient-row">
+        <span class="ingredient-name">{{ item.ingredient.name }}</span>
+        <span class="ingredient-amount">{{ item.amount }} {{ item.unit }}</span>
+    </div>
+    {% empty %}
+    <p style="color:var(--text-light);">Ингредиенты не указаны</p>
+    {% endfor %}
+</div>
 
-<!-- ═══════ JS: избранное + жалобы ═══════ -->
+<!-- Инструкция -->
+<div class="instructions-block">
+    <h3>📝 Приготовление</h3>
+    {{ article.instructions|linebreaks }}
+</div>
+
+<!-- Форма нового комментария -->
+{% if user.is_authenticated %}
+<div class="card" id="mainCommentForm">
+    <div class="form-group">
+        <label>💬 Добавить комментарий</label>
+        <textarea id="commentText" class="form-control" rows="3" placeholder="Ваш комментарий…"></textarea>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+            <button type="button" class="btn btn-primary" id="submitCommentBtn">Отправить</button>
+            <span id="commentFeedback" style="font-size:0.9rem;"></span>
+        </div>
+    </div>
+</div>
+{% else %}
+<p style="text-align:center;color:var(--text-light);">
+    <a href="{% url 'login' %}" style="color:var(--accent);">Войдите</a>, чтобы оставить комментарий.
+</p>
+{% endif %}
+
+<!-- Комментарии -->
+<div class="card" style="margin-bottom:20px;">
+    <h3>💬 Комментарии (<span id="commentsCount">{{ comments.count }}</span>)</h3>
+
+    <div id="commentsList">
+        {% for comment in comments %}
+        <div class="comment" id="comment-{{ comment.id }}" style="margin-bottom:15px;{% if comment.parent %}margin-left:30px;border-left:2px solid var(--pink);padding-left:15px;{% endif %}">
+            <div class="comment-header">
+                <span class="comment-author">{{ comment.author.username }}</span>
+                <span class="comment-date">{{ comment.created_at|date:"d.m.Y H:i" }}</span>
+                {% if user.is_authenticated and not comment.parent %}
+                <button class="btn-reply" onclick="replyTo({{ comment.id }}, '{{ comment.author.username }}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;">↩ Ответить</button>
+                {% endif %}
+            </div>
+            <div class="comment-text">{{ comment.text }}</div>
+
+            {% if user.is_authenticated and user != comment.author %}
+            <button class="btn-report btn-sm"
+                    data-comment-id="{{ comment.id }}"
+                    style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.8rem;margin-top:5px;">
+                🚩 Пожаловаться
+            </button>
+
+            <div id="report-form-container-{{ comment.id }}" style="display:none; margin-top:10px;">
+                <div class="report-options" style="background:var(--card-bg);padding:12px;border-radius:8px;border:1px solid var(--border);">
+                    <label style="display:block;margin-bottom:6px;cursor:pointer;">
+                        <input type="checkbox" class="report-reason" value="spam" checked>
+                        🛑 Спам / Реклама
+                    </label>
+                    <label style="display:block;margin-bottom:6px;cursor:pointer;">
+                        <input type="checkbox" class="report-reason" value="abuse">
+                        🤬 Оскорбление
+                    </label>
+                    <label style="display:block;margin-bottom:6px;cursor:pointer;">
+                        <input type="checkbox" class="report-reason" value="off_topic">
+                        📭 Не по теме
+                    </label>
+                    <div style="margin-top:8px;display:flex;gap:8px;">
+                        <button class="btn btn-danger btn-sm" onclick="submitReport({{ comment.id }})">🚩 Отправить жалобу</button>
+                        <button class="btn btn-outline btn-sm" onclick="cancelReport({{ comment.id }})">Отмена</button>
+                    </div>
+                    <span id="report-feedback-{{ comment.id }}" style="font-size:0.9rem;margin-top:6px;display:block;"></span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div id="reply-form-container-{{ comment.id }}" style="display:none; margin-top:10px; margin-left:30px;">
+                <textarea id="inline-text-{{ comment.id }}" class="form-control" rows="2" placeholder="Ваш ответ…" style="width:100%;"></textarea>
+                <div style="margin-top:6px; display:flex; gap:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="submitInlineReply({{ comment.id }})">📨 Ответить</button>
+                    <button class="btn btn-outline btn-sm" onclick="cancelInlineReply({{ comment.id }})">Отмена</button>
+                </div>
+                <span id="inline-feedback-{{ comment.id }}" style="font-size:0.9rem;"></span>
+            </div>
+
+            {% for reply in comment.replies.all %}
+            <div class="comment" style="margin-left:30px;border-left:2px solid var(--pink);padding-left:15px;margin-top:10px;">
+                <div class="comment-header">
+                    <span class="comment-author">{{ reply.author.username }}</span>
+                    <span class="comment-date">{{ reply.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="comment-text">{{ reply.text }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% empty %}
+        <p id="noCommentsMsg" style="color:var(--text-light);">Пока нет комментариев. Будьте первым!</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
-// ─── ИЗБРАННОЕ ───
-function toggleFavorite(recipeId) {
-    fetch(`/favorite/${recipeId}/`, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }})
-        .then(response => response.json())
-        .then(data => {
-            const btn = document.getElementById('favoriteBtn');
-            const icon = document.getElementById('favIcon');
-            const text = document.getElementById('favText');
-            const count = document.getElementById('favCount');
-            if (data.is_favorited) {
-                btn.className = 'btn btn-lg w-100 rounded-pill btn-danger';
-                icon.textContent = '❤️';
-                text.textContent = 'В избранном';
-            } else {
-                btn.className = 'btn btn-lg w-100 rounded-pill btn-outline-danger';
-                icon.textContent = '🤍';
-                text.textContent = 'Добавить в избранное';
+const COMMENT_API_URL = "{% url 'blog:add_comment_ajax' article.pk %}";
+const CSRF_TOKEN = '{{ csrf_token }}';
+
+document.getElementById('submitCommentBtn')?.addEventListener('click', function() {
+    const btn = this;
+    const textarea = document.getElementById('commentText');
+    const text = textarea.value.trim();
+    const feedback = document.getElementById('commentFeedback');
+
+    if (!text) {
+        feedback.innerHTML = '<span style="color:#dc3545;">⚠️ Напишите текст</span>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Отправка…';
+    feedback.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('text', text);
+
+    fetch(COMMENT_API_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-CSRFToken': CSRF_TOKEN}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const c = data.comment;
+            const noMsg = document.getElementById('noCommentsMsg');
+            if (noMsg) noMsg.style.display = 'none';
+
+            const commentHtml = `
+                <div class="comment" id="comment-${c.id}" style="margin-bottom:15px;">
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(c.author)}</span>
+                        <span class="comment-date">${c.created_at}</span>
+                        <button class="btn-reply" onclick="replyTo(${c.id}, '${escapeHtml(c.author)}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.9rem;">↩ Ответить</button>
+                    </div>
+                    <div class="comment-text">${escapeHtml(c.text)}</div>
+                    <button class="btn-report btn-sm" data-comment-id="${c.id}" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:0.8rem;margin-top:5px;">🚩 Пожаловаться</button>
+                    <div id="report-form-container-${c.id}" style="display:none; margin-top:10px;">
+                        <div class="report-options" style="background:var(--card-bg);padding:12px;border-radius:8px;border:1px solid var(--border);">
+                            <label style="display:block;margin-bottom:6px;cursor:pointer;"><input type="checkbox" class="report-reason" value="spam" checked> 🛑 Спам / Реклама</label>
+                            <label style="display:block;margin-bottom:6px;cursor:pointer;"><input type="checkbox" class="report-reason" value="abuse"> 🤬 Оскорбление</label>
+                            <label style="display:block;margin-bottom:6px;cursor:pointer;"><input type="checkbox" class="report-reason" value="off_topic"> 📭 Не по теме</label>
+                            <div style="margin-top:8px;display:flex;gap:8px;">
+                                <button class="btn btn-danger btn-sm" onclick="submitReport(${c.id})">🚩 Отправить жалобу</button>
+                                <button class="btn btn-outline btn-sm" onclick="cancelReport(${c.id})">Отмена</button>
+                            </div>
+                            <span id="report-feedback-${c.id}" style="font-size:0.9rem;margin-top:6px;display:block;"></span>
+                        </div>
+                    </div>
+                    <div id="reply-form-container-${c.id}" style="display:none; margin-top:10px; margin-left:30px;">
+                        <textarea id="inline-text-${c.id}" class="form-control" rows="2" placeholder="Ваш ответ…" style="width:100%;"></textarea>
+                        <div style="margin-top:6px; display:flex; gap:8px;">
+                            <button class="btn btn-primary btn-sm" onclick="submitInlineReply(${c.id})">📨 Ответить</button>
+                            <button class="btn btn-outline btn-sm" onclick="cancelInlineReply(${c.id})">Отмена</button>
+                        </div>
+                        <span id="inline-feedback-${c.id}" style="font-size:0.9rem;"></span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('commentsList').insertAdjacentHTML('afterbegin', commentHtml);
+
+            const newBtn = document.querySelector(`#comment-${c.id} .btn-report`);
+            if (newBtn) {
+                newBtn.addEventListener('click', function() {
+                    const cid = this.dataset.commentId;
+                    document.querySelectorAll('[id^="report-form-container-"]').forEach(el => el.style.display = 'none');
+                    const container = document.getElementById(`report-form-container-${cid}`);
+                    if (container) container.style.display = 'block';
+                });
             }
-            count.textContent = data.likes_count + ' в избранном';
-        });
-}
 
-// ─── НОВОЕ: ПОЖАЛОВАТЬСЯ НА КОММЕНТАРИЙ ───
-document.querySelectorAll('.report-comment-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const commentId = this.dataset.commentId;
-        const statusEl = document.getElementById('report-status-' + commentId);
+            const countSpan = document.getElementById('commentsCount');
+            if (countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
 
-        const reason = prompt(
-            'Причина жалобы:\n1 — Спам\n2 — Оскорбление\n3 — Не по теме',
-            '1'
-        );
-
-        if (!reason) return;
-
-        const reasonMap = { '1': 'spam', '2': 'abuse', '3': 'offtopic' };
-        const reasonCode = reasonMap[reason] || 'spam';
-
-        const formData = new FormData();
-        formData.append('reason', reasonCode);
-
-        fetch('/comment/' + commentId + '/report/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: formData,
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                this.disabled = true;
-                this.textContent = '✅ Жалоба отправлена';
-                statusEl.textContent = '(жалоб: ' + data.report_count + ')';
-            } else {
-                statusEl.textContent = '⚠️ ' + data.error;
-                statusEl.classList.add('text-danger');
-            }
-        });
+            textarea.value = '';
+            feedback.innerHTML = '<span style="color:#198754;">✅ Комментарий добавлен!</span>';
+            setTimeout(() => { feedback.innerHTML = ''; }, 3000);
+        } else {
+            feedback.innerHTML = '<span style="color:#dc3545;">❌ ' + (data.error || 'Ошибка') + '</span>';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
+    })
+    .catch(() => {
+        feedback.innerHTML = '<span style="color:#dc3545;">❌ Ошибка соединения</span>';
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
     });
 });
+
+function replyTo(commentId, username) {
+    document.querySelectorAll('[id^="reply-form-container-"]').forEach(el => el.style.display = 'none');
+    const container = document.getElementById(`reply-form-container-${commentId}`);
+    if (container) {
+        container.style.display = 'block';
+        document.getElementById(`inline-text-${commentId}`).focus();
+    }
+}
+
+function submitInlineReply(commentId) {
+    const textarea = document.getElementById(`inline-text-${commentId}`);
+    const text = textarea.value.trim();
+    const feedback = document.getElementById(`inline-feedback-${commentId}`);
+
+    if (!text) {
+        feedback.innerHTML = '<span style="color:#dc3545;">⚠️ Напишите текст</span>';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('parent_id', commentId);
+
+    fetch(COMMENT_API_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {'X-CSRFToken': CSRF_TOKEN}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const c = data.comment;
+            const replyHtml = `
+                <div class="comment" style="margin-left:30px;border-left:2px solid var(--pink);padding-left:15px;margin-top:10px;">
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(c.author)}</span>
+                        <span class="comment-date">${c.created_at}</span>
+                    </div>
+                    <div class="comment-text">${escapeHtml(c.text)}</div>
+                </div>
+            `;
+            const parentEl = document.getElementById(`comment-${commentId}`);
+            if (parentEl) parentEl.insertAdjacentHTML('beforeend', replyHtml);
+
+            textarea.value = '';
+            document.getElementById(`reply-form-container-${commentId}`).style.display = 'none';
+            feedback.innerHTML = '';
+
+            const countSpan = document.getElementById('commentsCount');
+            if (countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        } else {
+            feedback.innerHTML = '<span style="color:#dc3545;">❌ ' + (data.error || 'Ошибка') + '</span>';
+        }
+    })
+    .catch(() => { feedback.innerHTML = '<span style="color:#dc3545;">❌ Ошибка соединения</span>'; });
+}
+
+function cancelInlineReply(commentId) {
+    document.getElementById(`reply-form-container-${commentId}`).style.display = 'none';
+    document.getElementById(`inline-text-${commentId}`).value = '';
+    document.getElementById(`inline-feedback-${commentId}`).innerHTML = '';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.querySelector('.favorite-btn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    const recipeId = this.dataset.recipeId;
+    fetch(`/favorite/${recipeId}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (data.is_favorited) {
+                    this.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" stroke-width="2" style="vertical-align:-3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> <span class="like-count">${data.likes_count}</span>`;
+                } else {
+                    this.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="vertical-align:-3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> <span class="like-count">${data.likes_count}</span>`;
+                }
+            }
+        });
+});
+
+document.querySelectorAll('.btn-report').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.dataset.commentId;
+        document.querySelectorAll('[id^="report-form-container-"]').forEach(el => el.style.display = 'none');
+        const container = document.getElementById(`report-form-container-${commentId}`);
+        if (container) container.style.display = 'block';
+    });
+});
+
+function cancelReport(commentId) {
+    document.getElementById(`report-form-container-${commentId}`).style.display = 'none';
+    document.getElementById(`report-feedback-${commentId}`).innerHTML = '';
+}
+
+function submitReport(commentId) {
+    const container = document.getElementById(`report-form-container-${commentId}`);
+    const checkboxes = container.querySelectorAll('.report-reason:checked');
+    const feedback = document.getElementById(`report-feedback-${commentId}`);
+
+    if (checkboxes.length === 0) {
+        feedback.innerHTML = '<span style="color:#dc3545;">⚠️ Выберите хотя бы одну причину</span>';
+        return;
+    }
+
+    const reasons = Array.from(checkboxes).map(cb => cb.value).join(', ');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    fetch(`/comment/${commentId}/report/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `reason=${encodeURIComponent(reasons)}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            feedback.innerHTML = '<span style="color:#198754;">✅ Жалоба отправлена модератору!</span>';
+            setTimeout(() => {
+                container.style.display = 'none';
+                feedback.innerHTML = '';
+                container.querySelectorAll('.report-reason').forEach(cb => cb.checked = false);
+                const firstCb = container.querySelector('.report-reason');
+                if (firstCb) firstCb.checked = true;
+            }, 2000);
+        } else {
+            feedback.innerHTML = '<span style="color:#dc3545;">❌ ' + (data.error || 'Ошибка') + '</span>';
+        }
+    })
+    .catch(() => { feedback.innerHTML = '<span style="color:#dc3545;">❌ Ошибка соединения</span>'; });
+}
 </script>
 {% endblock %}

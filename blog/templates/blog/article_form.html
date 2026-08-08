@@ -2,122 +2,213 @@
 {% load static %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h1 class="mb-4">
-                {% if form.instance.pk %}✏️ Редактировать{% else %}🆕 Создать{% endif %} рецепт
-            </h1>
 
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
+<h1 class="page-title">
+    {% if form.instance.pk %}✏️ Редактировать{% else %}🆕 Создать{% endif %} рецепт
+</h1>
 
-                <!-- ═══════ БЛОК 1: ОСНОВНАЯ ИНФОРМАЦИЯ ═══════ -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">📋 Основная информация</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.title.label }}</label>
-                            {{ form.title }}
-                        </div>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.description.label }}</label>
-                            {{ form.description }}
-                        </div>
+        <!-- Основная информация -->
+    <div class="card">
+        <h3 class="card-title">📋 Основная информация</h3>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.category.label }}</label>
-                            {{ form.category }}
-                        </div>
+        <div class="form-group">
+            <label>{{ form.title.label }}</label>
+            {{ form.title }}
+        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.image.label }}</label>
-                            {{ form.image }}
-                            {% if form.instance.image %}
-                                <div class="mt-2">
-                                    <small class="text-muted">Текущее изображение:</small>
-                                    <img src="{{ form.instance.image.url }}" alt="Текущее изображение"
-                                         class="img-thumbnail mt-1" style="max-height: 150px;">
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+        <div class="form-group">
+            <label>{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.category.label }}</label>
+            {{ form.category }}
+        </div>
+
+        <div class="form-group">
+            <label>{{ form.image.label }}</label>
+            {{ form.image }}
+            {% if form.instance.image %}
+                <div class="mt-2">
+                    <small style="color: var(--text-light);">Текущее изображение:</small><br>
+                    <img src="{{ form.instance.image.url }}" alt="Текущее изображение"
+                         style="max-height: 150px; border-radius: var(--radius-sm); margin-top: 6px;">
                 </div>
+            {% endif %}
+        </div>
 
-                <!-- ═══════ БЛОК 2: ВРЕМЯ И СЛОЖНОСТЬ ═══════ -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">⏱ Время и сложность</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">{{ form.cook_time.label }}</label>
-                                {{ form.cook_time }}
-                                <small class="text-muted">{{ form.cook_time.help_text }}</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">{{ form.difficulty.label }}</label>
-                                {{ form.difficulty }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ═══════ БЛОК 3: КБЖУ ═══════ -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">🔬 Пищевая ценность (на 100 г)</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">🔥 {{ form.calories.label }}</label>
-                                {{ form.calories }}
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">🟥 {{ form.protein.label }}</label>
-                                {{ form.protein }}
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">🟨 {{ form.fat.label }}</label>
-                                {{ form.fat }}
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">🟩 {{ form.carbs.label }}</label>
-                                {{ form.carbs }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ═══════ БЛОК 4: ИНСТРУКЦИИ ═══════ -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">📝 Приготовление</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.instructions.label }}</label>
-                            {{ form.instructions }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ═══════ КНОПКИ ═══════ -->
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
-                        {% if form.instance.pk %}💾 Сохранить{% else %}📤 Опубликовать{% endif %}
-                    </button>
-                    <a href="{% url 'blog:index' %}" class="btn btn-outline-secondary btn-lg px-5 rounded-pill">
-                        ✕ Отмена
-                    </a>
-                </div>
-            </form>
+        <!-- 🆕 ССЫЛКА НА ВИДЕО -->
+        <div class="form-group" style="margin-top: 12px;">
+            <label>{{ form.video_url.label }}</label>
+            {{ form.video_url }}
+            {% if form.instance.video_url %}
+            <div class="mt-2">
+                <small style="color: var(--text-light);">Текущее видео:</small><br>
+                <a href="{{ form.instance.video_url }}" target="_blank"
+                   style="color: var(--accent);">
+                    {{ form.instance.video_url|urlizetrunc:40 }}
+                </a>
+            </div>
+            {% endif %}
+            <small style="color: var(--text-light); display: block; margin-top: 4px;">
+                🎬 YouTube, Vimeo, Rutube, Яндекс.Видео
+            </small>
         </div>
     </div>
-</div>
+
+    <!-- Время и сложность -->
+    <div class="card">
+        <h3 class="card-title">⏱ Время и сложность</h3>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label>{{ form.cook_time.label }}</label>
+                {{ form.cook_time }}
+                <small style="color: var(--text-light);">{{ form.cook_time.help_text }}</small>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+                <label>{{ form.difficulty.label }}</label>
+                {{ form.difficulty }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Пищевая ценность -->
+    <div class="card">
+        <h3 class="card-title">🔬 Пищевая ценность (на 100 г)</h3>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+                <label>🔥 {{ form.calories.label }}</label>
+                {{ form.calories }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+                <label>🟥 {{ form.protein.label }}</label>
+                {{ form.protein }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+                <label>🟨 {{ form.fat.label }}</label>
+                {{ form.fat }}
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 130px;">
+                <label>🟩 {{ form.carbs.label }}</label>
+                {{ form.carbs }}
+            </div>
+        </div>
+    </div>
+
+        <!-- 🧂 Ингредиенты -->
+    <div class="card">
+        <h3 class="card-title">🧂 Ингредиенты</h3>
+
+        <div id="ingredients-container">
+            {% if form.instance.pk %}
+                {% for ri in form.instance.recipe_ingredients.all %}
+                <div class="ingredient-row-form" style="display:flex;gap:10px;margin-bottom:10px;align-items:center;">
+                    <input type="text" name="ingredient_name_{{ forloop.counter0 }}"
+                           value="{{ ri.ingredient.name }}"
+                           class="form-control ingredient-input"
+                           style="flex:2;" placeholder="Начните вводить ингредиент..."
+                           list="ingredients-datalist" autocomplete="off" required>
+                    <input type="hidden" name="ingredient_id_{{ forloop.counter0 }}"
+                           value="{{ ri.ingredient.id }}">
+                    <input type="number" name="amount_{{ forloop.counter0 }}"
+                           value="{{ ri.amount }}" step="0.01" class="form-control"
+                           style="flex:1;" placeholder="Кол-во" required>
+                    <input type="text" name="unit_{{ forloop.counter0 }}"
+                           value="{{ ri.unit }}" class="form-control"
+                           style="flex:1;" placeholder="г, шт, мл" required>
+                    <button type="button" class="btn btn-danger"
+                            style="padding:8px 12px;font-size:1rem;line-height:1;"
+                            onclick="this.parentElement.remove()">✕</button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Datalist со всеми ингредиентами -->
+        <datalist id="ingredients-datalist">
+            {% for ing in ingredients %}
+            <option value="{{ ing.name }}" data-id="{{ ing.id }}">
+            {% endfor %}
+        </datalist>
+
+        <button type="button" class="btn btn-outline" onclick="addIngredient()"
+                style="margin-top:8px;">
+            ➕ Добавить ингредиент
+        </button>
+    </div>
+
+    <!-- Приготовление -->
+    <div class="card">
+        <h3 class="card-title">📝 Приготовление</h3>
+
+        <div class="form-group">
+            <label>{{ form.instructions.label }}</label>
+            {{ form.instructions }}
+        </div>
+    </div>
+
+    <!-- Кнопки -->
+    <div style="display: flex; gap: 12px; margin-top: 8px;">
+        <button type="submit" class="btn btn-primary">
+            {% if form.instance.pk %}💾 Сохранить{% else %}📤 Опубликовать{% endif %}
+        </button>
+        <a href="{% url 'blog:index' %}" class="btn btn-outline">✕ Отмена</a>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let ingredientIndex = 0;
+    {% if form.instance.pk %}
+        ingredientIndex = {{ form.instance.recipe_ingredients.count }};
+    {% endif %}
+
+    // Словарь: название ингредиента → его ID
+    const ingredientMap = {
+        {% for ing in ingredients %}
+        '{{ ing.name|addslashes }}': {{ ing.id }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function addIngredient() {
+        const container = document.getElementById('ingredients-container');
+        const div = document.createElement('div');
+        div.className = 'ingredient-row-form';
+        div.style.cssText = 'display:flex;gap:10px;margin-bottom:10px;align-items:center;';
+
+        div.innerHTML = `
+            <input type="text" name="ingredient_name_${ingredientIndex}"
+                   class="form-control ingredient-input"
+                   style="flex:2;" placeholder="Начните вводить ингредиент..."
+                   list="ingredients-datalist" autocomplete="off" required
+                   oninput="updateIngredientId(this, ${ingredientIndex})">
+            <input type="hidden" name="ingredient_id_${ingredientIndex}" value="">
+            <input type="number" name="amount_${ingredientIndex}" step="0.01"
+                   class="form-control" style="flex:1;" placeholder="Кол-во" required>
+            <input type="text" name="unit_${ingredientIndex}"
+                   class="form-control" style="flex:1;" placeholder="г, шт, мл" required>
+            <button type="button" class="btn btn-danger"
+                    style="padding:8px 12px;font-size:1rem;line-height:1;"
+                    onclick="this.parentElement.remove()">✕</button>
+        `;
+
+        container.appendChild(div);
+        ingredientIndex++;
+    }
+
+    function updateIngredientId(input, index) {
+        const hidden = document.querySelector(`input[name="ingredient_id_${index}"]`);
+        if (hidden) {
+            hidden.value = ingredientMap[input.value] || '';
+        }
+    }
+</script>
 {% endblock %}

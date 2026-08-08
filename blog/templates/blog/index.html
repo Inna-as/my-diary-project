@@ -1,168 +1,110 @@
 {% extends 'blog/base.html' %}
+{% load static %}
+
+{% block title %}Точка вкуса — рецепты{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'blog:index' %}">Главная</a>
+    <span class="sep">›</span>
+    <span>Каталог рецептов</span>
+</div>
+{% endblock %}
 
 {% block content %}
 
-<div class="branding-header text-center mb-4">
-    <h1>{{ PROJECT_NAME }}</h1>
-    <p class="lead">{{ PROJECT_SLOGAN }}</p>
-    <p class="text-muted">{{ GREETING }}</p>
+<h1 class="page-title">Еда на любой вкус</h1>
+<p class="page-subtitle">Готовьте с удовольствием вместе с Точкой вкуса</p>
+
+<!-- Поиск -->
+<div class="search-box">
+    <form class="search-form" method="get">
+        <input type="text" name="q" class="search-input"
+               placeholder="Поиск по рецептам…"
+               value="{{ query|default:'' }}">
+        <button type="submit" class="search-btn">Найти</button>
+    </form>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-
-        <!-- ═══════ БАННЕР «РЕЦЕПТ ДНЯ» ═══════ -->
-        {% if recipe_of_day %}
-        <div class="card bg-warning bg-gradient text-dark mb-4 shadow border-0">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h5 class="text-uppercase small fw-bold opacity-75 mb-1">🍽️ Рецепт дня</h5>
-                        <h4 class="fw-bold mb-2">
-                            <a href="{% url 'blog:article_detail' recipe_of_day.pk %}"
-                               class="text-dark text-decoration-none">
-                                {{ recipe_of_day.title }}
-                            </a>
-                        </h4>
-                        {% if recipe_of_day.description %}
-                            <p class="mb-2">{{ recipe_of_day.description|truncatewords:20 }}</p>
-                        {% endif %}
-                        <div class="d-flex flex-wrap gap-2">
-                            {% if recipe_of_day.cook_time %}
-                                <span class="badge bg-dark">⏱ {{ recipe_of_day.cook_time }} мин</span>
-                            {% endif %}
-                            {% if recipe_of_day.difficulty %}
-                                <span class="badge bg-dark">{{ recipe_of_day.get_difficulty_display }}</span>
-                            {% endif %}
-                            {% if recipe_of_day.calories %}
-                                <span class="badge bg-dark">🔥 {{ recipe_of_day.calories }} ккал</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <a href="{% url 'blog:article_detail' recipe_of_day.pk %}"
-                           class="btn btn-dark rounded-pill px-4">Смотреть →</a>
-                    </div>
-                </div>
-            </div>
+<!-- Рецепт дня -->
+{% if recipe_of_day %}
+<div class="daily-card">
+    <div class="daily-info">
+        <div class="daily-label">Рецепт дня</div>
+        <div class="daily-title">{{ recipe_of_day.title }}</div>
+        <div class="daily-meta">
+            {% if recipe_of_day.difficulty %}
+            <span>— {{ recipe_of_day.get_difficulty_display }}</span>
+            {% endif %}
+            {% if recipe_of_day.cooking_time %}
+            <span>⏱ {{ recipe_of_day.cooking_time }} мин</span>
+            {% endif %}
         </div>
-        {% endif %}
-
-        <!-- ПОИСК -->
-        <div class="mb-4">
-            <form method="get" action="{% url 'blog:index' %}" class="d-flex shadow-sm rounded-pill overflow-hidden border">
-                {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
-                <input type="search" name="q" class="form-control border-0 px-4"
-                       placeholder="Найти рецепт или шеф-повара..." value="{{ query }}" aria-label="Search">
-                <button class="btn btn-primary px-4 fw-bold" type="submit">Найти</button>
-            </form>
-        </div>
-
-        <h2 class="mb-4 h3 fw-bold text-dark">Каталог рецептов</h2>
-
-        <!-- СОРТИРОВКА -->
-        <div class="d-flex justify-content-end align-items-center mb-3 small">
-            <span class="text-muted me-2">Сортировка:</span>
-            <form method="get" action="." id="sortForm" class="d-inline">
-                {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-                <select name="sort" class="form-select form-select-sm rounded-pill shadow-sm px-3"
-                        onchange="document.getElementById('sortForm').submit();">
-                    <option value="new" {% if sort_by == 'new' %}selected{% endif %}>Сначала новые</option>
-                    <option value="old" {% if sort_by == 'old' %}selected{% endif %}>Сначала старые</option>
-                    <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>Самые обсуждаемые</option>
-                </select>
-            </form>
-        </div>
-
-        <!-- КАРТОЧКИ РЕЦЕПТОВ -->
-        {% for article in page_obj %}
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h2>
-                        <a href="{% url 'blog:article_detail' article.pk %}" class="text-decoration-none text-dark">
-                            {{ article.title }}
-                        </a>
-                    </h2>
-
-                    <p class="text-muted extra-small" style="font-size: 0.85rem;">
-                        Автор:
-                        <a href="{% url 'blog:author_profile' article.author.username %}"
-                           class="text-decoration-none fw-bold text-dark">
-                            {{ article.author.username }}
-                        </a> |
-                        Дата: {{ article.created_at|date:"d.m.Y" }} |
-                        <span class="text-danger">❤️ {{ article.favorites_count }}</span> |
-                        <span class="text-primary">💬 {{ article.comments_count }}</span>
-                    </p>
-
-                    {% if article.description %}
-                        <p class="card-text text-secondary">{{ article.description|truncatewords:25 }}</p>
-                    {% endif %}
-
-                    <!-- ═══ НОВЫЕ ПОЛЯ: время, сложность, КБЖУ ═══ -->
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        {% if article.cook_time %}
-                            <span class="badge bg-success rounded-pill">⏱ {{ article.cook_time }} мин</span>
-                        {% endif %}
-                        {% if article.difficulty %}
-                            <span class="badge bg-info rounded-pill">{{ article.get_difficulty_display }}</span>
-                        {% endif %}
-                        {% if article.calories %}
-                            <span class="badge bg-warning text-dark rounded-pill">🔥 {{ article.calories }} ккал</span>
-                        {% endif %}
-                    </div>
-
-                    <!-- Строка БЖУ -->
-                    {% if article.protein or article.fat or article.carbs %}
-                        <div class="d-flex flex-wrap gap-1 small text-muted">
-                            {% if article.protein %}
-                                <span>🟥 Б: {{ article.protein }} г</span>
-                            {% endif %}
-                            {% if article.fat %}
-                                <span>🟨 Ж: {{ article.fat }} г</span>
-                            {% endif %}
-                            {% if article.carbs %}
-                                <span>🟩 У: {{ article.carbs }} г</span>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        {% empty %}
-            <div class="alert alert-warning shadow-sm mt-3" role="alert">
-                🔍 По вашему запросу ничего не найдено.
-            </div>
-        {% endfor %}
-
-        <!-- ПАГИНАЦИЯ -->
-        {% if page_obj.has_other_pages %}
-            <div class="d-flex justify-content-center align-items-center gap-3 mt-5 mb-4">
-                {% if page_obj.has_previous %}
-                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none"
-                       href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
-                        &larr; Назад
-                    </a>
-                {% else %}
-                    <button class="btn btn-sm btn-light border text-muted rounded-pill px-3" disabled>&larr; Назад</button>
-                {% endif %}
-
-                <span class="badge bg-white border text-secondary rounded-pill p-2 px-4 shadow-sm fw-normal"
-                      style="font-size: 0.85rem;">
-                    Страница <strong class="text-primary">{{ page_obj.number }}</strong>
-                    из {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm text-decoration-none"
-                       href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
-                        Вперед &rarr;
-                    </a>
-                {% else %}
-                    <button class="btn btn-sm btn-light border text-muted rounded-pill px-3" disabled>Вперед &rarr;</button>
-                {% endif %}
-            </div>
-        {% endif %}
-
     </div>
+    <a href="{% url 'blog:article_detail' recipe_of_day.pk %}" class="daily-btn">Смотреть</a>
 </div>
+{% endif %}
+
+<!-- Сортировка -->
+<form class="sort-row" method="get">
+    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+    <label>Сортировка:</label>
+    <select name="sort" class="sort-select" onchange="this.form.submit()">
+        <option value="new" {% if sort_by == 'new' %}selected{% endif %}>Сначала новые</option>
+        <option value="old" {% if sort_by == 'old' %}selected{% endif %}>Сначала старые</option>
+        <option value="popular" {% if sort_by == 'popular' %}selected{% endif %}>По популярности</option>
+    </select>
+</form>
+
+<!-- Сетка рецептов -->
+{% if page_obj %}
+<div class="recipe-grid">
+    {% for article in page_obj %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' article.pk %}">
+            {% if article.image %}
+            <img src="{{ article.image.url }}" alt="{{ article.title }}" class="recipe-card-img">
+            {% else %}
+            <div class="recipe-card-img" style="background: var(--pink); display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🍽️</div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <span class="recipe-card-title">{{ article.title }}</span>
+                <div class="recipe-card-meta">
+                    <span>❤️ {{ article.favorites_count|default:0 }}</span>
+                    <span>💬 {{ article.comments_count|default:0 }}</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Пагинация -->
+<div class="pagination-row">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&sort={{ sort_by }}{% if query %}&q={{ query }}{% endif %}"
+       class="pagination-btn">← Назад</a>
+    {% else %}
+    <span class="pagination-btn" disabled>← Назад</span>
+    {% endif %}
+
+    <span class="pagination-num">
+        Страница <strong>{{ page_obj.number }}</strong> из <strong>{{ page_obj.paginator.num_pages }}</strong>
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&sort={{ sort_by }}{% if query %}&q={{ query }}{% endif %}"
+       class="pagination-btn">Вперёд →</a>
+    {% else %}
+    <span class="pagination-btn" disabled>Вперёд →</span>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">🔍</div>
+    <p>По запросу «{{ query }}» ничего не найдено</p>
+    <a href="{% url 'blog:index' %}" class="btn btn-outline">Сбросить поиск</a>
+</div>
+{% endif %}
+
 {% endblock %}

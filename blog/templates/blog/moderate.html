@@ -1,108 +1,113 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-<h2 class="mb-4">🛡️ Модерация</h2>
+<h1 class="page-title">🛡️ Модерация</h1>
 
-<!-- ══════════ ВКЛАДКИ ══════════ -->
-<ul class="nav nav-tabs mb-4">
-    <li class="nav-item">
-        <a class="nav-link {% if tab == 'pending' %}active{% endif %}"
-           href="?tab=pending">
-            📝 На проверке
-            <span id="pendingBadge" class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
-        </a>
-    </li>
+<!-- Вкладки -->
+<div style="display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid var(--border);">
+    <a href="?tab=pending"
+       style="padding: 10px 20px; text-decoration: none; font-weight: 600;
+              {% if tab == 'pending' %}color: var(--accent); border-bottom: 2px solid var(--accent); margin-bottom: -2px;{% else %}color: var(--text-light);{% endif %}">
+        📝 На проверке
+        <span style="background: var(--yellow); color: var(--text); border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; margin-left: 4px;">{{ pending_count }}</span>
+    </a>
     {% if reports is not None %}
-    <li class="nav-item">
-        <a class="nav-link {% if tab == 'reports' %}active{% endif %}"
-           href="?tab=reports">
-            🚨 Жалобы
-            <span class="badge bg-danger ms-1">{{ reports|length }}</span>
-        </a>
-    </li>
+    <a href="?tab=reports"
+       style="padding: 10px 20px; text-decoration: none; font-weight: 600;
+              {% if tab == 'reports' %}color: var(--accent); border-bottom: 2px solid var(--accent); margin-bottom: -2px;{% else %}color: var(--text-light);{% endif %}">
+        🚨 Жалобы
+        <span style="background: var(--red); color: #fff; border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; margin-left: 4px;">{{ reports|length }}</span>
+    </a>
     {% endif %}
-</ul>
+</div>
 
-<!-- ══════════ ВКЛАДКА: НА ПРОВЕРКЕ ══════════ -->
+<!-- ВКЛАДКА: НА ПРОВЕРКЕ -->
 {% if tab == 'pending' %}
 
     {% if pending_comments %}
-    <div class="list-group">
+    <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-success" id="approveAllBtn">
+            ✅ Одобрить все ({{ pending_count }})
+        </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
         {% for comment in pending_comments %}
-        <div class="list-group-item" id="comment-{{ comment.id }}">
-            <div class="d-flex justify-content-between align-items-start">
+        <div class="card" id="comment-{{ comment.id }}" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <strong>{{ comment.author.username }}</strong>
-                    <small class="text-muted">→ рецепт «{{ comment.article.title }}»</small>
-                    <p class="mt-1 mb-2">{{ comment.text }}</p>
-                    <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                    <small style="color: var(--text-light);">→ рецепт «{{ comment.article.title }}»</small>
+                    <p style="margin: 6px 0;">{{ comment.text }}</p>
+                    <small style="color: var(--text-light);">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
                 </div>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-success approve-btn"
-                            data-comment-id="{{ comment.id }}">✅ Одобрить</button>
-                    <button class="btn btn-danger delete-btn"
-                            data-comment-id="{{ comment.id }}">🗑 Удалить</button>
+                <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                    <button class="btn btn-success btn-sm approve-btn"
+                            data-comment-id="{{ comment.id }}"
+                            data-url="{% url 'blog:moderate_approve' comment.id %}">✅</button>
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-comment-id="{{ comment.id }}"
+                            data-url="{% url 'blog:moderate_delete' comment.id %}">🗑</button>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-success">✅ Нет комментариев на проверке.</div>
+    <div class="card card--centered" style="text-align: center;">
+        <p style="color: var(--green);">✅ Нет комментариев на проверке.</p>
+    </div>
     {% endif %}
 
 {% endif %}
 
-<!-- ══════════ ВКЛАДКА: ЖАЛОБЫ ══════════ -->
+<!-- ВКЛАДКА: ЖАЛОБЫ -->
 {% if tab == 'reports' and reports is not None %}
 
     {% if reports %}
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Комментарий</th>
-                    <th>Автор</th>
-                    <th>Рецепт</th>
-                    <th>Пожаловался</th>
-                    <th>Причина</th>
-                    <th>Дата</th>
-                    <th>Действия</th>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: var(--text); color: #fff;">
+                    <th style="padding: 10px 12px; text-align: left;">Комментарий</th>
+                    <th style="padding: 10px 12px; text-align: left;">Автор</th>
+                    <th style="padding: 10px 12px; text-align: left;">Рецепт</th>
+                    <th style="padding: 10px 12px; text-align: left;">Пожаловался</th>
+                    <th style="padding: 10px 12px; text-align: left;">Причина</th>
+                    <th style="padding: 10px 12px; text-align: left;">Дата</th>
+                    <th style="padding: 10px 12px; text-align: left;">Действия</th>
                 </tr>
             </thead>
             <tbody>
                 {% for report in reports %}
-                <tr id="report-{{ report.id }}">
-                    <td><small>{{ report.comment.text|truncatechars:60 }}</small></td>
-                    <td>{{ report.comment.author.username }}</td>
-                    <td>
-                        <a href="{% url 'blog:article_detail' report.comment.article.pk %}">
+                <tr id="report-{{ report.id }}" style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 12px;"><small>{{ report.comment.text|truncatechars:60 }}</small></td>
+                    <td style="padding: 10px 12px;">{{ report.comment.author.username }}</td>
+                    <td style="padding: 10px 12px;">
+                        <a href="{% url 'blog:article_detail' report.comment.article.pk %}" style="color: var(--accent);">
                             {{ report.comment.article.title|truncatechars:25 }}
                         </a>
                     </td>
-                    <td>{{ report.reporter.username }}</td>
-                    <td>
+                    <td style="padding: 10px 12px;">{{ report.reporter.username }}</td>
+                    <td style="padding: 10px 12px;">
                         {% if report.reason == 'spam' %}
-                            <span class="badge bg-warning text-dark">Спам</span>
+                            <span style="background: var(--yellow); padding: 2px 8px; border-radius: 6px; font-size: 0.8rem;">Спам</span>
                         {% elif report.reason == 'abuse' %}
-                            <span class="badge bg-danger">Оскорбление</span>
+                            <span style="background: var(--red); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem;">Оскорбление</span>
                         {% else %}
-                            <span class="badge bg-secondary">Не по теме</span>
+                            <span style="background: var(--border); padding: 2px 8px; border-radius: 6px; font-size: 0.8rem;">Не по теме</span>
                         {% endif %}
                     </td>
-                    <td><small>{{ report.created_at|date:"d.m.Y H:i" }}</small></td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-danger dismiss-report-btn"
+                    <td style="padding: 10px 12px;"><small>{{ report.created_at|date:"d.m.Y H:i" }}</small></td>
+                    <td style="padding: 10px 12px;">
+                        <div style="display: flex; gap: 4px;">
+                            <button class="btn btn-outline btn-sm dismiss-report-btn"
                                     data-report-id="{{ report.id }}"
-                                    data-comment-id="{{ report.comment.id }}">
-                                ❌ Отклонить
-                            </button>
-                            <button class="btn btn-outline-dark delete-comment-from-report-btn"
+                                    data-url="{% url 'blog:report_dismiss' report.id %}">❌ Отклонить</button>
+                            <button class="btn btn-danger btn-sm delete-comment-from-report-btn"
                                     data-comment-id="{{ report.comment.id }}"
-                                    data-report-id="{{ report.id }}">
-                                🗑 Удалить комм.
-                            </button>
+                                    data-report-id="{{ report.id }}"
+                                    data-url="{% url 'blog:moderate_delete' report.comment.id %}">🗑 Удалить</button>
                         </div>
                     </td>
                 </tr>
@@ -111,7 +116,9 @@
         </table>
     </div>
     {% else %}
-    <div class="alert alert-success">✅ Жалоб нет — всё чисто!</div>
+    <div class="card card--centered" style="text-align: center;">
+        <p style="color: var(--green);">✅ Жалоб нет — всё чисто!</p>
+    </div>
     {% endif %}
 
 {% endif %}
@@ -120,107 +127,83 @@
 
 {% block extra_js %}
 <script>
-// ═══════════ ОДОБРИТЬ КОММЕНТАРИЙ ═══════════
+const approveAllBtn = document.getElementById('approveAllBtn');
+if (approveAllBtn) {
+    approveAllBtn.addEventListener('click', function() {
+        if (!confirm('Одобрить все {{ pending_comments|length }} комментариев?')) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '⏳ Одобряем...';
+        fetch("{% url 'blog:moderate_approve_all' %}")
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) { window.location.reload(); }
+                else { alert('Ошибка: ' + (data.error || 'неизвестная')); btn.disabled = false; btn.textContent = '✅ Одобрить все ({{ pending_count }})'; }
+            })
+            .catch(() => { alert('Ошибка соединения'); btn.disabled = false; btn.textContent = '✅ Одобрить все ({{ pending_count }})'; });
+    });
+}
+
 document.querySelectorAll('.approve-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        const commentId = this.dataset.commentId;
-        fetch(`/moderate/${commentId}/approve/`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const el = document.getElementById('comment-' + commentId);
-                    if (el) el.remove();
-                    updateBadge();
-                    checkEmpty();
+        const url = this.dataset.url;
+        fetch(url).then(r => r.json()).then(data => {
+            if (data.success) {
+                const el = document.getElementById('comment-' + this.dataset.commentId);
+                if (el) el.remove();
+                fetch('/moderate/count/').then(r => r.json()).then(d => {
+                    const badge = document.querySelector('[href*="pending"] span');
+                    if (badge) badge.textContent = d.count;
+                });
+                if (!document.querySelector('.card[id^="comment-"]')) {
+                    const container = document.querySelector('[style*="flex-direction: column"]');
+                    if (container) container.innerHTML = '<div class="card card--centered" style="text-align: center;"><p style="color: var(--green);">✅ Нет комментариев на проверке.</p></div>';
                 }
-            });
+            }
+        });
     });
 });
 
-// ═══════════ УДАЛИТЬ КОММЕНТАРИЙ ═══════════
 document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        const commentId = this.dataset.commentId;
         if (!confirm('Точно удалить комментарий?')) return;
-        fetch(`/moderate/${commentId}/delete/`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const el = document.getElementById('comment-' + commentId);
-                    if (el) el.remove();
-                    updateBadge();
-                    checkEmpty();
-                }
-            });
+        fetch(this.dataset.url).then(r => r.json()).then(data => {
+            if (data.success) {
+                const el = document.getElementById('comment-' + this.dataset.commentId);
+                if (el) el.remove();
+                fetch('/moderate/count/').then(r => r.json()).then(d => {
+                    const badge = document.querySelector('[href*="pending"] span');
+                    if (badge) badge.textContent = d.count;
+                });
+            }
+        });
     });
 });
 
-// ═══════════ ОТКЛОНИТЬ ЖАЛОБУ ═══════════
 document.querySelectorAll('.dismiss-report-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        const reportId = this.dataset.reportId;
         if (!confirm('Отклонить жалобу? Комментарий останется.')) return;
-        fetch(`/reports/${reportId}/dismiss/`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const el = document.getElementById('report-' + reportId);
-                    if (el) el.remove();
-                    checkEmptyReports();
-                }
-            });
+        fetch(this.dataset.url).then(r => r.json()).then(data => {
+            if (data.success) {
+                const el = document.getElementById('report-' + this.dataset.reportId);
+                if (el) el.remove();
+            }
+        });
     });
 });
 
-// ═══════════ УДАЛИТЬ КОММЕНТАРИЙ (из вкладки жалоб) ═══════════
 document.querySelectorAll('.delete-comment-from-report-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        const commentId = this.dataset.commentId;
-        const reportId = this.dataset.reportId;
         if (!confirm('Точно удалить комментарий?')) return;
-        fetch(`/moderate/${commentId}/delete/`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    // Удаляем комментарий из pending (если есть)
-                    const pendingEl = document.getElementById('comment-' + commentId);
-                    if (pendingEl) pendingEl.remove();
-                    // Удаляем строку жалобы
-                    const reportEl = document.getElementById('report-' + reportId);
-                    if (reportEl) reportEl.remove();
-                    updateBadge();
-                    checkEmptyReports();
-                }
-            });
+        fetch(this.dataset.url).then(r => r.json()).then(data => {
+            if (data.success) {
+                const pendingEl = document.getElementById('comment-' + this.dataset.commentId);
+                if (pendingEl) pendingEl.remove();
+                const reportEl = document.getElementById('report-' + this.dataset.reportId);
+                if (reportEl) reportEl.remove();
+            }
+        });
     });
 });
-
-// ═══════════ ВСПОМОГАТЕЛЬНЫЕ ═══════════
-function updateBadge() {
-    fetch(`/moderate/count/`)
-        .then(r => r.json())
-        .then(data => {
-            const badge = document.getElementById('pendingBadge');
-            if (badge) badge.textContent = data.count;
-        });
-}
-
-function checkEmpty() {
-    if (!document.querySelector('.list-group-item')) {
-        const container = document.querySelector('.list-group');
-        if (container) {
-            container.innerHTML = '<div class="alert alert-success">✅ Нет комментариев на проверке.</div>';
-        }
-    }
-}
-
-function checkEmptyReports() {
-    if (!document.querySelector('tbody tr')) {
-        const table = document.querySelector('.table-responsive');
-        if (table) {
-            table.innerHTML = '<div class="alert alert-success">✅ Жалоб нет — всё чисто!</div>';
-        }
-    }
-}
 </script>
 {% endblock %}

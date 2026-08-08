@@ -11,6 +11,7 @@ class ArticleForm(forms.ModelForm):
             'title', 'description', 'instructions', 'category',
             'image', 'cook_time', 'difficulty',
             'calories', 'protein', 'fat', 'carbs',
+            'video_url',
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -51,6 +52,10 @@ class ArticleForm(forms.ModelForm):
                 'class': 'form-control rounded-pill px-3',
                 'placeholder': 'г',
                 'min': 0,
+            }),
+            'video_url': forms.URLInput(attrs={
+                'class': 'form-control rounded-pill px-3',
+                'placeholder': 'https://www.youtube.com/watch?v=...'
             }),
             'fat': forms.NumberInput(attrs={
                 'class': 'form-control rounded-pill px-3',

@@ -1,8 +1,12 @@
+import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -19,14 +23,12 @@ from .forms import CustomUserCreationForm, UserProfileForm, ArticleForm
 #  АВТОМАТИЧЕСКАЯ МОДЕРАЦИЯ КОММЕНТАРИЕВ
 # ═══════════════════════════════════════════════════════
 
-# Слова спам-триггеров (в нижнем регистре)
 SPAM_WORDS = [
     'купить', 'заработок', 'заработать', 'кредит',
     'ставка', 'казино', 'бесплатный сыр', 'миллион',
     'подпишись', 'подписывайся', 'розыгрыш', 'акция',
 ]
 
-# Мат-слова (упрощённый список, можно расширить)
 BAD_WORDS = [
     'дурак', 'идиот', 'дебил', 'тупой',
 ]
@@ -38,8 +40,7 @@ NEWBIE_THRESHOLD = 3
 
 def auto_moderate_comment(text, user):
     """
-    Анализирует текст комментария и возвращает вердикт.
-    Возвращает: 'approved', 'pending', 'blocked'
+    Возвращает: 'approved', 'visible_pending', 'blocked'
     """
     text_lower = text.lower()
     spam_hits = sum(1 for word in SPAM_WORDS if word in text_lower)
@@ -48,7 +49,6 @@ def auto_moderate_comment(text, user):
     approved_count = Comment.objects.filter(
         author=user, is_approved=True
     ).count()
-
     is_trusted = approved_count >= TRUST_THRESHOLD
 
     if links_count > MAX_LINKS_FOR_NEWBIE:
@@ -58,28 +58,24 @@ def auto_moderate_comment(text, user):
     if is_trusted and spam_hits == 0 and links_count <= 1:
         return 'approved'
     if spam_hits > 0:
-        return 'pending'
+        return 'visible_pending'
     if approved_count < NEWBIE_THRESHOLD:
-        return 'pending'
+        return 'visible_pending'
     return 'approved'
 
 
-# ═══════════════════════════════════════════════════════
-#  ВСПОМОГАТЕЛЬНАЯ: СЧЁТЧИК МОДЕРАЦИИ ДЛЯ КОНТЕКСТА
-# ═══════════════════════════════════════════════════════
-
 def _get_pending_count(user):
-    """Возвращает количество непроверенных комментариев для пользователя."""
+    """Количество комментариев, требующих проверки."""
     if not user.is_authenticated:
         return 0
     if user.is_staff or user.is_superuser:
-        return Comment.objects.filter(is_approved=False, is_spam=False).count()
+        return Comment.objects.filter(is_approved=True, auto_approved=False).count()
     return Comment.objects.filter(
-        is_approved=False, is_spam=False, article__author=user
+        is_approved=True, auto_approved=False, article__author=user
     ).count()
 
 
-# ============ ГЛАВНАЯ СТРАНИЦА ============
+# ============ ГЛАВНАЯ ============
 def index_view(request):
     query = request.GET.get('q', '').strip()
     sort_by = request.GET.get('sort', 'new')
@@ -107,11 +103,10 @@ def index_view(request):
             search_filter &= word_filter
         articles_list = articles_list.filter(search_filter)
 
-    paginator = Paginator(articles_list, 3)
+    paginator = Paginator(articles_list, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # ═══════ БАННЕР «РЕЦЕПТ ДНЯ» ═══════
     recipe_of_day = None
     published_recipes = Article.objects.filter(is_published=True).order_by('id')
     if published_recipes.exists():
@@ -124,12 +119,12 @@ def index_view(request):
         'query': query,
         'sort_by': sort_by,
         'recipe_of_day': recipe_of_day,
-        'pending_count': _get_pending_count(request.user),  # <-- ДОБАВЛЕНО
+        'pending_count': _get_pending_count(request.user),
     }
     return render(request, 'blog/index.html', context)
 
 
-# ============ ДЕТАЛЬНАЯ СТРАНИЦА РЕЦЕПТА ============
+# ============ ДЕТАЛЬНАЯ СТРАНИЦА ============
 def article_detail_view(request, pk):
     article = get_object_or_404(
         Article.objects.annotate(comments_count=Count('comments')),
@@ -159,16 +154,11 @@ def article_detail_view(request, pk):
         can_edit = (request.user == article.author) or request.user.is_superuser
 
     # ─── ФИЛЬТРАЦИЯ КОММЕНТАРИЕВ ───
-    if request.user == article.author or request.user.is_staff or request.user.is_superuser:
-        comments = article.comments.select_related(
-            'author', 'parent'
-        ).prefetch_related('replies__author').order_by('-created_at')
-    else:
-        comments = article.comments.filter(is_approved=True).select_related(
-            'author', 'parent'
-        ).prefetch_related('replies__author').order_by('-created_at')
+    comments = article.comments.filter(is_approved=True).select_related(
+        'author', 'parent'
+    ).prefetch_related('replies__author').order_by('-created_at')
 
-    # ─── СОЗДАНИЕ КОММЕНТАРИЯ С АВТОФИЛЬТРОМ ───
+    # ─── СОЗДАНИЕ КОММЕНТАРИЯ ───
     if request.method == 'POST' and 'comment_text' in request.POST:
         if request.user.is_authenticated:
             comment_text = request.POST.get('comment_text', '').strip()
@@ -197,13 +187,14 @@ def article_detail_view(request, pk):
                         text=comment_text, parent=parent_comment,
                         is_approved=True, auto_approved=True,
                     )
-                else:  # pending
+                else:  # visible_pending
                     Comment.objects.create(
                         article=article, author=request.user,
                         text=comment_text, parent=parent_comment,
-                        is_approved=False,
+                        is_approved=True,
+                        auto_approved=False,
                     )
-                    messages.info(request, '✅ Комментарий появится после проверки модератором.')
+                    messages.info(request, '✅ Комментарий опубликован. Модератор проверит его позже.')
 
                 return redirect('blog:article_detail', pk=pk)
 
@@ -218,9 +209,33 @@ def article_detail_view(request, pk):
         'can_edit': can_edit,
         'comments': comments,
         'likes_count': likes_count,
-        'pending_count': _get_pending_count(request.user),  # <-- ДОБАВЛЕНО
+        'pending_count': _get_pending_count(request.user),
+        'breadcrumb_title': article.title,
     }
     return render(request, 'blog/article_detail.html', context)
+
+# ═══════════════════════════════════════════
+#  ФОНОВАЯ ОТПРАВКА ПИСЕМ (не тормозит регистрацию)
+# ═══════════════════════════════════════════
+def _send_welcome_email(user_email, username):
+    """Отправляет приветственное письмо в отдельном потоке."""
+    try:
+        subject = '🍳 Добро пожаловать на «Еда на любой вкус»!'
+        message = render_to_string('email/welcome_email.html', {
+            'username': username,
+            'site_url': 'http://127.0.0.1:8000',
+        })
+        send_mail(
+            subject,
+            '',
+            settings.DEFAULT_FROM_EMAIL,
+            [user_email],
+            html_message=message,
+            fail_silently=False,
+        )
+    except Exception as e:
+        # Ошибка отправки письма не помешает регистрации
+        print(f'[WELCOME EMAIL ERROR] {e}')
 
 
 # ============ РЕГИСТРАЦИЯ ============
@@ -230,72 +245,150 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # ── Отправка приветственного письма ──
+            if user.email:
+                thread = threading.Thread(
+                    target=_send_welcome_email,
+                    args=(user.email, user.username),
+                )
+                thread.start()
+
             return redirect('blog:index')
     else:
         form = CustomUserCreationForm()
 
     return render(request, 'blog/register.html', {'form': form})
 
-
-# ============ СОЗДАНИЕ РЕЦЕПТА ============
+# ============ СОЗДАНИЕ / РЕДАКТИРОВАНИЕ / УДАЛЕНИЕ ============
+@login_required
 @login_required
 def article_create_view(request):
+    ingredients_qs = Ingredient.objects.all().order_by('name')
+
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES)
         if form.is_valid():
             article = form.save(commit=False)
             article.author = request.user
             article.save()
+
+            # ─── Сохраняем ингредиенты ───
+            i = 0
+            while f'ingredient_name_{i}' in request.POST:
+                name = request.POST.get(f'ingredient_name_{i}', '').strip()
+                ing_id = request.POST.get(f'ingredient_id_{i}', '').strip()
+                amount = request.POST.get(f'amount_{i}', '').strip()
+                unit = request.POST.get(f'unit_{i}', '').strip()
+
+                if name and amount and unit:
+                    # Если ID передан и ингредиент существует — используем его
+                    if ing_id and Ingredient.objects.filter(id=int(ing_id)).exists():
+                        ingredient = Ingredient.objects.get(id=int(ing_id))
+                    else:
+                        # Ищем по имени
+                        ingredient = Ingredient.objects.filter(name__iexact=name).first()
+                        if not ingredient:
+                            # Создаём новый ингредиент
+                            other_cat, _ = FoodCategory.objects.get_or_create(
+                                name='Прочее',
+                                defaults={'name': 'Прочее'}
+                            )
+                            ingredient = Ingredient.objects.create(
+                                name=name,
+                                category=other_cat
+                            )
+
+                    RecipeIngredient.objects.create(
+                        recipe=article,
+                        ingredient=ingredient,
+                        amount=float(amount),
+                        unit=unit,
+                    )
+                i += 1
             return redirect('blog:article_detail', pk=article.pk)
     else:
         form = ArticleForm()
 
     return render(request, 'blog/article_form.html', {
         'form': form,
+        'ingredients': ingredients_qs,
         'pending_count': _get_pending_count(request.user),
     })
 
 
-# ============ РЕДАКТИРОВАНИЕ РЕЦЕПТА ============
 @login_required
 def article_update_view(request, pk):
     article = get_object_or_404(Article, pk=pk)
+    ingredients_qs = Ingredient.objects.all().order_by('name')
 
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES, instance=article)
         if form.is_valid():
-            form.save()
+            article = form.save()
+
+            # ─── Удаляем старые ингредиенты и создаём новые ───
+            article.recipe_ingredients.all().delete()
+            i = 0
+            while f'ingredient_name_{i}' in request.POST:
+                name = request.POST.get(f'ingredient_name_{i}', '').strip()
+                ing_id = request.POST.get(f'ingredient_id_{i}', '').strip()
+                amount = request.POST.get(f'amount_{i}', '').strip()
+                unit = request.POST.get(f'unit_{i}', '').strip()
+
+                if name and amount and unit:
+                    # Если ID передан и ингредиент существует — используем его
+                    if ing_id and Ingredient.objects.filter(id=int(ing_id)).exists():
+                        ingredient = Ingredient.objects.get(id=int(ing_id))
+                    else:
+                        # Ищем по имени
+                        ingredient = Ingredient.objects.filter(name__iexact=name).first()
+                        if not ingredient:
+                            # Создаём новый ингредиент
+                            other_cat, _ = FoodCategory.objects.get_or_create(
+                                name='Прочее',
+                                defaults={'name': 'Прочее'}
+                            )
+                            ingredient = Ingredient.objects.create(
+                                name=name,
+                                category=other_cat
+                            )
+
+                    RecipeIngredient.objects.create(
+                        recipe=article,
+                        ingredient=ingredient,
+                        amount=float(amount),
+                        unit=unit,
+                    )
+                i += 1
+
             return redirect('blog:article_detail', pk=article.pk)
     else:
         form = ArticleForm(instance=article)
 
     return render(request, 'blog/article_form.html', {
         'form': form,
+        'ingredients': ingredients_qs,
         'pending_count': _get_pending_count(request.user),
     })
 
-
-# ============ УДАЛЕНИЕ РЕЦЕПТА ============
 @login_required
 def article_delete_view(request, pk):
     article = get_object_or_404(Article, pk=pk)
-
     if request.method == 'POST':
         article.delete()
         return redirect('blog:index')
-
     return render(request, 'blog/article_confirm_delete.html', {
         'article': article,
         'pending_count': _get_pending_count(request.user),
     })
 
 
-# ============ ПРОФИЛЬ АВТОРА ============
+# ============ ПРОФИЛИ ============
 def author_profile_view(request, username):
     author = get_object_or_404(CustomUser, username=username)
     total_articles = author.article_set.count()
     author_articles = author.article_set.all().order_by('-created_at')
-
     return render(request, 'blog/author_profile.html', {
         'author': author,
         'total_articles': total_articles,
@@ -304,7 +397,6 @@ def author_profile_view(request, username):
     })
 
 
-# ============ ЛИЧНЫЙ КАБИНЕТ ============
 @login_required
 def profile_view(request):
     if request.method == 'POST':
@@ -329,7 +421,7 @@ def profile_view(request):
     return render(request, 'blog/profile.html', context)
 
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК — ГЛАВНАЯ ============
+# ============ ХОЛОДИЛЬНИК ============
 @login_required
 def fridge_view(request):
     categories = FoodCategory.objects.prefetch_related('ingredients').all()
@@ -339,9 +431,7 @@ def fridge_view(request):
     })
 
 
-# ============ ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ============
 def get_missing_ingredients(recipe_ingredients, selected_ingredients):
-    """Возвращает список ингредиентов, которых не хватает (только прямое совпадение)."""
     missing = []
     selected_set = set(selected_ingredients)
     for ri in recipe_ingredients:
@@ -350,7 +440,6 @@ def get_missing_ingredients(recipe_ingredients, selected_ingredients):
     return missing
 
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК — РЕЗУЛЬТАТЫ ============
 @login_required
 def fridge_results_view(request):
     selected_category = (request.POST.get('category') or
@@ -361,7 +450,6 @@ def fridge_results_view(request):
 
     if request.method == 'POST':
         ingredients_text = request.POST.get('ingredients_text', '').strip()
-
         if ingredients_text:
             ingredient_names = [name.strip() for name in ingredients_text.split(',') if name.strip()]
             for name in ingredient_names:
@@ -440,10 +528,8 @@ def fridge_results_view(request):
         recipe_ingredients = recipe.recipe_ingredients.all()
         recipe_ingredient_ids = set(ri.ingredient.id for ri in recipe_ingredients)
         total_needed = len(recipe_ingredients)
-
         matches = selected_set & recipe_ingredient_ids
         missing = total_needed - len(matches)
-
         if matches:
             results.append({
                 'recipe': recipe,
@@ -480,12 +566,10 @@ def fridge_results_view(request):
     return render(request, 'blog/fridge_results.html', context)
 
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК — AJAX-ПОИСК ============
 @login_required
 def fridge_search_view(request):
     selected_ingredients = request.session.get('selected_ingredients', [])
     selected_category = request.GET.get('category') or request.session.get('selected_category', '')
-
     if not selected_ingredients:
         return JsonResponse({'recipes': []})
 
@@ -495,20 +579,16 @@ def fridge_search_view(request):
 
     if selected_category:
         recipes = recipes.filter(category=selected_category)
-
     recipes = recipes.prefetch_related('recipe_ingredients__ingredient')
 
     results = []
     selected_set = set(selected_ingredients)
-
     for recipe in recipes:
         recipe_ingredients = recipe.recipe_ingredients.all()
         recipe_ingredient_ids = set(ri.ingredient.id for ri in recipe_ingredients)
         total_needed = len(recipe_ingredients)
-
         matches = selected_set & recipe_ingredient_ids
         missing = total_needed - len(matches)
-
         if matches:
             results.append({
                 'id': recipe.id,
@@ -522,11 +602,9 @@ def fridge_search_view(request):
             })
 
     results.sort(key=lambda x: x['matches'], reverse=True)
-
     return JsonResponse({'recipes': results})
 
 
-# ============ УМНЫЙ ХОЛОДИЛЬНИК — СОХРАНИТЬ ВЫБРАННОЕ ============
 @login_required
 def fridge_save_view(request):
     import json
@@ -536,23 +614,19 @@ def fridge_save_view(request):
     return JsonResponse({'success': True})
 
 
-# ============ ИЗБРАННОЕ — ПЕРЕКЛЮЧЕНИЕ ============
+# ============ ИЗБРАННОЕ ============
 @login_required
 def favorite_view(request, recipe_id):
     article = get_object_or_404(Article, pk=recipe_id)
-
     favorite, created = FavoriteRecipe.objects.get_or_create(
         user=request.user, recipe=article
     )
-
     if not created:
         favorite.delete()
         is_favorited = False
     else:
         is_favorited = True
-
     likes_count = article.favored_by.count()
-
     return JsonResponse({
         'success': True,
         'is_favorited': is_favorited,
@@ -560,13 +634,11 @@ def favorite_view(request, recipe_id):
     })
 
 
-# ============ ИЗБРАННОЕ — СПИСОК ============
 @login_required
 def favorites_view(request):
     favorite_recipes = FavoriteRecipe.objects.filter(
         user=request.user
     ).select_related('recipe').order_by('-id')
-
     context = {
         'favorite_recipes': favorite_recipes,
         'pending_count': _get_pending_count(request.user),
@@ -575,7 +647,7 @@ def favorites_view(request):
 
 
 # ═══════════════════════════════════════════════════════
-#  СТРАНИЦА МОДЕРАЦИИ (комментарии + жалобы)
+#  МОДЕРАЦИЯ
 # ═══════════════════════════════════════════════════════
 
 @login_required
@@ -583,34 +655,34 @@ def moderate_view(request):
     """Очередь комментариев на модерации + жалобы."""
     user = request.user
 
-    # ─── НЕПРОВЕРЕННЫЕ КОММЕНТАРИИ ───
+    # ─── КОММЕНТАРИИ, ТРЕБУЮЩИЕ ПРОВЕРКИ ───
     if user.is_staff or user.is_superuser:
         pending = Comment.objects.filter(
-            is_approved=False, is_spam=False,
+            is_approved=True, auto_approved=False,
         ).select_related('article', 'author').order_by('-created_at')
     else:
         pending = Comment.objects.filter(
-            is_approved=False, is_spam=False,
+            is_approved=True, auto_approved=False,
             article__author=user,
         ).select_related('article', 'author').order_by('-created_at')
 
-    # ─── ЖАЛОБЫ (только для staff/superuser) ───
+    # ─── ЖАЛОБЫ ───
     reports = None
     if user.is_staff or user.is_superuser:
         reports = CommentReport.objects.select_related(
             'comment', 'comment__article', 'comment__author', 'reporter'
         ).order_by('-created_at')
 
-    # Определяем активную вкладку
-    tab = request.GET.get('tab', 'pending')  # 'pending' или 'reports'
+    tab = request.GET.get('tab', 'pending')
 
     context = {
-        'pending_comments': pending,
+        'pending_comments': pending,         # ← вернул как было в шаблоне
         'pending_count': pending.count(),
         'reports': reports,
         'tab': tab,
     }
     return render(request, 'blog/moderate.html', context)
+
 
 # ═══════════════════════════════════════════════════════
 #  AJAX: ОДОБРИТЬ КОММЕНТАРИЙ
@@ -627,29 +699,26 @@ def moderate_approve_view(request, comment_id):
     ):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
 
-    comment.is_approved = True
-    comment.is_spam = False
+    comment.auto_approved = True  # снимаем пометку «надо проверить»
     comment.save()
 
     return JsonResponse({'success': True})
 
 
 # ═══════════════════════════════════════════════════════
-#  AJAX: ОДОБРИТЬ ВСЕ (НОВОЕ)
+#  AJAX: ОДОБРИТЬ ВСЕ
 # ═══════════════════════════════════════════════════════
 
 @login_required
 def moderate_approve_all_view(request):
     """Одобряет сразу все непроверенные комментарии."""
     user = request.user
-
     if not (user.is_staff or user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Только для модераторов'}, status=403)
 
-    updated = Comment.objects.filter(is_approved=False, is_spam=False).update(
-        is_approved=True
+    updated = Comment.objects.filter(is_approved=True, auto_approved=False).update(
+        auto_approved=True
     )
-
     return JsonResponse({'success': True, 'approved_count': updated})
 
 
@@ -662,46 +731,37 @@ def moderate_delete_view(request, comment_id):
     """Удаление комментария (AJAX)."""
     if not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
-
     comment = get_object_or_404(Comment, id=comment_id)
     comment.delete()
     return JsonResponse({'success': True})
 
+
 # ═══════════════════════════════════════════════════════
-#  AJAX: ПОЖАЛОВАТЬСЯ НА КОММЕНТАРИЙ
+#  AJAX: ПОЖАЛОВАТЬСЯ
 # ═══════════════════════════════════════════════════════
 
 @login_required
 def comment_report_view(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
-
     if comment.author == request.user:
         return JsonResponse(
             {'success': False, 'error': 'Нельзя жаловаться на свой комментарий'},
             status=400
         )
-
     if CommentReport.objects.filter(comment=comment, reporter=request.user).exists():
         return JsonResponse(
             {'success': False, 'error': 'Вы уже жаловались на этот комментарий'},
             status=400
         )
-
     reason = request.POST.get('reason', 'spam')
-
     CommentReport.objects.create(
-        comment=comment,
-        reporter=request.user,
-        reason=reason,
+        comment=comment, reporter=request.user, reason=reason,
     )
-
     comment.report_count += 1
     comment.save()
-
     if comment.report_count >= 3:
         comment.is_approved = False
         comment.save()
-
     return JsonResponse({'success': True, 'report_count': comment.report_count})
 
 
@@ -712,16 +772,15 @@ def comment_report_view(request, comment_id):
 @login_required
 def moderate_count_view(request):
     user = request.user
-
     if user.is_staff or user.is_superuser:
-        count = Comment.objects.filter(is_approved=False, is_spam=False).count()
+        count = Comment.objects.filter(is_approved=True, auto_approved=False).count()
     else:
         count = Comment.objects.filter(
-            is_approved=False, is_spam=False,
+            is_approved=True, auto_approved=False,
             article__author=user,
         ).count()
-
     return JsonResponse({'count': count})
+
 
 # ═══════════════════════════════════════════════════════
 #  AJAX: ОТКЛОНИТЬ ЖАЛОБУ
@@ -732,7 +791,63 @@ def report_dismiss_view(request, report_id):
     """Удаляет жалобу, комментарий остаётся."""
     if not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'success': False, 'error': 'Нет прав'}, status=403)
-
     report = get_object_or_404(CommentReport, id=report_id)
     report.delete()
     return JsonResponse({'success': True})
+# ═══════════════════════════════════════════════════════
+#  AJAX: ДОБАВИТЬ КОММЕНТАРИЙ (без перезагрузки)
+# ═══════════════════════════════════════════════════════
+
+@login_required
+def add_comment_ajax_view(request, article_id):
+    """Добавляет комментарий через AJAX, возвращает JSON с данными нового комментария."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Только POST'}, status=405)
+
+    article = get_object_or_404(Article, pk=article_id)
+    comment_text = request.POST.get('text', '').strip()
+    parent_id = request.POST.get('parent_id', '').strip()
+
+    if not comment_text:
+        return JsonResponse({'success': False, 'error': 'Пустой комментарий'}, status=400)
+
+    parent_comment = None
+    if parent_id:
+        try:
+            parent_comment = Comment.objects.get(id=parent_id)
+        except Comment.DoesNotExist:
+            pass
+
+    verdict = auto_moderate_comment(comment_text, request.user)
+
+    if verdict == 'blocked':
+        return JsonResponse({
+            'success': False,
+            'error': 'Комментарий похож на спам и не был опубликован.',
+            'blocked': True,
+        })
+
+    is_approved = verdict in ('approved', 'visible_pending')
+    auto_approved = verdict == 'approved'
+
+    comment = Comment.objects.create(
+        article=article,
+        author=request.user,
+        text=comment_text,
+        parent=parent_comment,
+        is_approved=is_approved,
+        auto_approved=auto_approved,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'text': comment.text,
+            'author': comment.author.username,
+            'author_avatar': comment.author.avatar.url if comment.author.avatar else None,
+            'created_at': comment.created_at.strftime('%d.%m.%Y %H:%M'),
+            'is_pending': not auto_approved,
+            'parent_id': comment.parent.id if comment.parent else None,
+        }
+    })

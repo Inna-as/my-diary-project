@@ -1,52 +1,35 @@
 {% extends 'blog/base.html' %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4">❤️ Мои избранные рецепты</h2>
+<h1 class="page-title">❤️ Мои избранные рецепты</h1>
 
-    {% if favorite_recipes %}
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            {% for fav in favorite_recipes %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        {% if fav.recipe.image %}
-                            <img src="{{ fav.recipe.image.url }}" class="card-img-top" alt="{{ fav.recipe.title }}" style="height: 200px; object-fit: cover;">
-                        {% else %}
-                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <span class="text-white fs-1">🍽️</span>
-                            </div>
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="{% url 'blog:article_detail' fav.recipe.pk %}" class="text-decoration-none text-dark">
-                                    {{ fav.recipe.title }}
-                                </a>
-                            </h5>
-                            <p class="card-text text-muted small">
-                                {{ fav.recipe.description|truncatewords:20 }}
-                            </p>
-                        </div>
-                        <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                ⭐ {{ fav.recipe.favored_by.count }}
-                            </small>
-                            <small class="text-muted">
-                                {{ fav.recipe.created_at|date:"d.m.Y" }}
-                            </small>
-                        </div>
-                    </div>
+{% if favorite_recipes %}
+<div class="recipe-grid">
+    {% for fav in favorite_recipes %}
+    <div class="recipe-card">
+        <a href="{% url 'blog:article_detail' fav.recipe.pk %}">
+            {% if fav.recipe.image %}
+                <img src="{{ fav.recipe.image.url }}" alt="{{ fav.recipe.title }}" class="recipe-card-img">
+            {% else %}
+                <div class="recipe-card-img" style="background: var(--pink);"></div>
+            {% endif %}
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">{{ fav.recipe.title }}</div>
+                <div class="recipe-card-meta">
+                    <span>⭐ {{ fav.recipe.favored_by.count }}</span>
+                    <span>{{ fav.recipe.created_at|date:"d.m.Y" }}</span>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <p class="fs-1">💔</p>
-            <h4 class="text-muted">Пока ничего нет в избранном</h4>
-            <p class="text-muted">Добавляйте рецепты, нажимая на ❤️</p>
-            <a href="{% url 'blog:index' %}" class="btn btn-outline-danger mt-2">
-                🔍 Найти рецепты
-            </a>
-        </div>
-    {% endif %}
+            </div>
+        </a>
+    </div>
+    {% endfor %}
 </div>
+{% else %}
+<div class="card card--centered" style="text-align: center;">
+    <div style="font-size: 3rem; margin-bottom: 8px;">💔</div>
+    <h3 class="card-title">Пока ничего нет в избранном</h3>
+    <p style="color: var(--text-light);">Добавляйте рецепты, нажимая на ❤️</p>
+    <a href="{% url 'blog:index' %}" class="btn btn-primary" style="margin-top: 8px;">🔍 Найти рецепты</a>
+</div>
+{% endif %}
 {% endblock %}

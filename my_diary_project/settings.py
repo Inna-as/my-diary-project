@@ -1,13 +1,14 @@
+import locale
+import os
+import ssl
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Загружаем переменные из файла .env
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Django берет ключ и режим отладки из скрытого файла .env
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 
@@ -54,6 +55,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'blog.context_processors.branding_context',
                 'blog.context_processors.greeting_context',
+                'blog.context_processors.breadcrumbs',
             ],
         },
     },
@@ -136,3 +138,7 @@ PROJECT_SLOGAN = 'Твой навигатор на кухне для поиск�
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+
+# ==================== НАСТРОЙКА ПОЧТЫ ====================
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

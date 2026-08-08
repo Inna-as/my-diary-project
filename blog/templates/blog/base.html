@@ -1,113 +1,233 @@
 {% load django_bootstrap5 %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍽️ Точка вкуса — Простые рецепты</title>
+    <title>{% block title %}Точка вкуса{% endblock %}</title>
     {% bootstrap_css %}
+    <link rel="stylesheet" href="{% static 'blog/css/style.css' %}">
 </head>
-<body>
+<body class="has-sidebar">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'blog:index' %}">🍽️ Точка вкуса</a>
+    <!-- ═══════════════ ЛЕВЫЙ САЙДБАР ═══════════════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-inner">
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog:fridge' %}">🧊 Умный холодильник</a>
-                    </li>
-                </ul>
-
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <span class="nav-link">Привет, {{ user.username }}!</span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:profile' %}">⚙️ Профиль</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:favorites' %}">❤️ Избранное</a>
-                        </li>
-
-                        {% if user.is_staff or user.is_superuser %}
-                        <li class="nav-item">
-                            <a class="nav-link position-relative" href="{% url 'blog:moderate' %}">
-                                🛡️ Модерация
-                                <span id="pendingBadge" class="badge bg-warning text-dark ms-1">{{ pending_count|default:0 }}</span>
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        {% if user.is_staff %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="/admin/">🔒 Админка</a>
-                        </li>
-                        {% endif %}
-
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:article_create' %}">➕ Добавить рецепт</a>
-                        </li>
-                        <li class="nav-item">
-                            <form method="post" action="{% url 'logout' %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn nav-link border-0 bg-transparent">🚪 Выйти</button>
-                            </form>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">🔑 Войти</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'blog:register' %}">📝 Регистрация</a>
-                        </li>
-                    {% endif %}
-                </ul>
+            <!-- Аватар + имя (если авторизован) -->
+            {% if user.is_authenticated %}
+            <div class="sidebar-profile-card">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="" class="sidebar-avatar">
+                {% else %}
+                    <div class="sidebar-avatar sidebar-avatar--empty"></div>
+                {% endif %}
+                <a href="{% url 'blog:profile' %}" class="sidebar-profile-name">{{ user.username }}</a>
             </div>
-        </div>
-    </nav>
+            {% endif %}
 
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <!-- Навигация -->
+            <nav class="sidebar-nav">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'blog:profile' %}" class="sidebar-link">Профиль</a>
+                    <a href="{% url 'blog:favorites' %}" class="sidebar-link">Избранное</a>
+                    <a href="{% url 'blog:fridge' %}" class="sidebar-link">Умный Холодильник</a>
+                    <a href="{% url 'blog:article_create' %}" class="sidebar-link">Добавить рецепт</a>
+                    {% if user.is_staff or user.is_superuser %}
+                        <a href="{% url 'blog:moderate' %}" class="sidebar-link sidebar-link--moderate">
+                            Модерация
+                            {% if pending_count %}
+                                <span class="sidebar-badge">{{ pending_count }}</span>
+                            {% endif %}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span class="sidebar-empty-msg">Войдите, чтобы открыть все возможности</span>
+                {% endif %}
+            </nav>
+
+            <!-- Нижняя часть сайдбара -->
+<div class="sidebar-bottom">
+
+    <!-- 🆕 Только 3 магазина с логотипами -->
+    <div style="margin-bottom:14px;">
+        <div style="font-size:0.78rem;color:var(--text-light);text-align:center;margin-bottom:10px;font-weight:500;">
+            🛒 Купить недостающие продукты
         </div>
-        {% endfor %}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+            <a href="https://samokat.ru/" target="_blank"
+               style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);transition:all var(--transition);text-decoration:none;">
+                <img src="{% static 'images/shops/samokat.png' %}" alt="Самокат"
+                     style="width:38px;height:38px;object-fit:contain;">
+                <span style="font-size:0.7rem;color:var(--text-mid);font-weight:500;">Самокат</span>
+            </a>
+            <a href="https://vkusvill.ru/" target="_blank"
+               style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);transition:all var(--transition);text-decoration:none;">
+                <img src="{% static 'images/shops/vkusvill.png' %}" alt="ВкусВилл"
+                     style="width:38px;height:38px;object-fit:contain;">
+                <span style="font-size:0.7rem;color:var(--text-mid);font-weight:500;">ВкусВилл</span>
+            </a>
+            <a href="https://lavka.yandex.ru/" target="_blank"
+               style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);transition:all var(--transition);text-decoration:none;">
+                <img src="{% static 'images/shops/yandex-lavka.png' %}" alt="Яндекс Лавка"
+                     style="width:38px;height:38px;object-fit:contain;">
+                <span style="font-size:0.7rem;color:var(--text-mid);font-weight:500;">Лавка</span>
+            </a>
+        </div>
     </div>
-    {% endif %}
 
-    <main class="container mt-4">
-        {% block content %}
-        {% endblock %}
-    </main>
 
-    {% block extra_js %}{% endblock %}
+</div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════ ОСНОВНОЙ КОНТЕНТ ═══════════════ -->
+    <div class="main-wrap">
+
+        <!-- ВЕРХНЯЯ ПЛАШКА: бренд + вход/регистрация -->
+        <header class="top-bar">
+            <span class="top-bar-brand">
+    <a href="{% url 'blog:index' %}" style="text-decoration:none;color:inherit;">Точка вкуса</a>
+</span>
+            <div class="top-bar-actions">
+                {% if user.is_authenticated %}
+                    <span class="top-bar-hello">Привет, {{ user.username }}</span>
+                    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="top-bar-btn">Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="top-bar-btn">Войти</a>
+                    <a href="{% url 'blog:register' %}" class="top-bar-btn top-bar-btn--primary">Регистрация</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- ХЛЕБНЫЕ КРОШКИ -->
+       <!-- Хлебные крошки -->
+{% if breadcrumbs %}
+<div class="breadcrumbs">
+    {% for crumb in breadcrumbs %}
+        {% if crumb.url and not forloop.last %}
+            <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+            <span class="sep">›</span>
+        {% else %}
+            <span>{{ crumb.title }}</span>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+        <!-- СООБЩЕНИЯ -->
+        {% if messages %}
+        <div class="toasts">
+            {% for message in messages %}
+            <div class="toast toast-{{ message.tags }}">
+                <span>{{ message }}</span>
+                <button onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <main class="main">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- ФУТЕР -->
+        <footer class="footer">
+            <p>Точка вкуса &mdash; простые рецепты для домашней кухни</p>
+        </footer>
+    </div>
+
+    <!-- КНОПКА НАВЕРХ -->
+    <button class="scroll-btn" id="scrollBtn" aria-label="Наверх">&uarr;</button>
+
+    <!-- МОБИЛЬНЫЙ БУРГЕР -->
+    <button class="burger" id="burger" aria-label="Меню">
+        <span></span><span></span><span></span>
+    </button>
+
+    <!-- МОБИЛЬНОЕ МЕНЮ -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-inner">
+            {% if user.is_authenticated %}
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="" class="mobile-avatar">
+                {% endif %}
+                <div class="mobile-username">{{ user.username }}</div>
+                <a href="{% url 'blog:profile' %}">Профиль</a>
+                <a href="{% url 'blog:favorites' %}">Избранное</a>
+                <a href="{% url 'blog:fridge' %}">Холодильник</a>
+                <a href="{% url 'blog:article_create' %}">Добавить рецепт</a>
+                {% if user.is_staff or user.is_superuser %}
+                    <a href="{% url 'blog:moderate' %}">Модерация</a>
+                {% endif %}
+                <hr>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Выйти</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Войти</a>
+                <a href="{% url 'blog:register' %}">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
 
     {% bootstrap_javascript %}
-
-    {% if user.is_authenticated %}
     <script>
-    // Обновление счётчика модерации раз в 60 секунд
-    setInterval(function() {
-        fetch('{% url "blog:moderate_count" %}')
-            .then(r => r.json())
-            .then(data => {
-                const badge = document.getElementById('pendingBadge');
-                if (badge) {
-                    badge.textContent = data.count;
-                }
-            });
-    }, 60000);
-    </script>
-    {% endif %}
+    (function() {
+        var scrollBtn = document.getElementById('scrollBtn');
+        var burger = document.getElementById('burger');
+        var mobileMenu = document.getElementById('mobileMenu');
+        var mobileOverlay = document.getElementById('mobileOverlay');
+        var body = document.body;
 
+        window.addEventListener('scroll', function() {
+            scrollBtn.classList.toggle('show', window.scrollY > 500);
+        }, { passive: true });
+
+        scrollBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        function openMenu() {
+            burger.classList.add('active');
+            mobileMenu.classList.add('active');
+            mobileOverlay.classList.add('active');
+            body.classList.add('locked');
+        }
+        function closeMenu() {
+            burger.classList.remove('active');
+            mobileMenu.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            body.classList.remove('locked');
+        }
+
+        burger.addEventListener('click', function() {
+            burger.classList.contains('active') ? closeMenu() : openMenu();
+        });
+        mobileOverlay.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeMenu();
+        });
+        mobileMenu.querySelectorAll('a').forEach(function(l) {
+            l.addEventListener('click', closeMenu);
+        });
+
+        document.querySelectorAll('.toast').forEach(function(t) {
+            setTimeout(function() {
+                t.style.opacity = '0';
+                setTimeout(function() { t.remove(); }, 300);
+            }, 4000);
+        });
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
