@@ -130,7 +130,6 @@
 const approveAllBtn = document.getElementById('approveAllBtn');
 if (approveAllBtn) {
     approveAllBtn.addEventListener('click', function() {
-        if (!confirm('Одобрить все {{ pending_comments|length }} комментариев?')) return;
         const btn = this;
         btn.disabled = true;
         btn.textContent = '⏳ Одобряем...';
@@ -166,7 +165,6 @@ document.querySelectorAll('.approve-btn').forEach(btn => {
 
 document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Точно удалить комментарий?')) return;
         fetch(this.dataset.url).then(r => r.json()).then(data => {
             if (data.success) {
                 const el = document.getElementById('comment-' + this.dataset.commentId);
@@ -182,7 +180,6 @@ document.querySelectorAll('.delete-btn').forEach(btn => {
 
 document.querySelectorAll('.dismiss-report-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Отклонить жалобу? Комментарий останется.')) return;
         fetch(this.dataset.url).then(r => r.json()).then(data => {
             if (data.success) {
                 const el = document.getElementById('report-' + this.dataset.reportId);
@@ -194,7 +191,6 @@ document.querySelectorAll('.dismiss-report-btn').forEach(btn => {
 
 document.querySelectorAll('.delete-comment-from-report-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-        if (!confirm('Точно удалить комментарий?')) return;
         fetch(this.dataset.url).then(r => r.json()).then(data => {
             if (data.success) {
                 const pendingEl = document.getElementById('comment-' + this.dataset.commentId);
