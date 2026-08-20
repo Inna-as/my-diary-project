@@ -3,9 +3,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -211,28 +208,7 @@ def article_detail_view(request, pk):
     }
     return render(request, 'blog/article_detail.html', context)
 
-# ═══════════════════════════════════════════
-#  ФОНОВАЯ ОТПРАВКА ПИСЕМ
-# ═══════════════════════════════════════════
-def _send_welcome_email(user_email, username):
 
-    try:
-        subject = '🍳 Добро пожаловать на «Еда на любой вкус»!'
-        message = render_to_string('email/welcome_email.html', {
-            'username': username,
-            'site_url': 'http://127.0.0.1:8000',
-        })
-        send_mail(
-            subject,
-            '',
-            settings.DEFAULT_FROM_EMAIL,
-            [user_email],
-            html_message=message,
-            fail_silently=False,
-        )
-    except Exception as e:
-        # Ошибка отправки письма не помешает регистрации
-        print(f'[WELCOME EMAIL ERROR] {e}')
 
 
 # ============ РЕГИСТРАЦИЯ ============
@@ -242,14 +218,6 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-
-            # ── Отправка приветственного письма ──
-            if user.email:
-                thread = threading.Thread(
-                    target=_send_welcome_email,
-                    args=(user.email, user.username),
-                )
-                thread.start()
 
             return redirect('blog:index')
     else:

@@ -60,7 +60,6 @@ class Article(models.Model):
         ('snack', 'Перекус'),
         ('drink', 'Напиток'),
         ('salad', 'Салат'),
-        ('soup', 'Суп'),
         ('main', 'Основное блюдо'),
         ('baking', 'Выпечка'),
     ]
@@ -110,10 +109,10 @@ class Article(models.Model):
         choices=DIFFICULTY_CHOICES,
         default='easy'
     )
-    calories = models.PositiveIntegerField("Калорийность (ккал)", null=True, blank=True)
-    protein = models.PositiveIntegerField("Белки (г)", null=True, blank=True)
-    fat = models.PositiveIntegerField("Жиры (г)", null=True, blank=True)
-    carbs = models.PositiveIntegerField("Углеводы (г)", null=True, blank=True)
+    calories = models.DecimalField(max_digits=6, decimal_places=1, null=True, blank=True, verbose_name='Калории (ккал)')
+    protein = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True, verbose_name='Белки (г)')
+    fat = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True, verbose_name='Жиры (г)')
+    carbs = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True, verbose_name='Углеводы (г)')
     video_url = models.URLField(
         "Ссылка на видео",
         blank=True,

@@ -93,7 +93,7 @@
 </span>
             <div class="top-bar-actions">
                 {% if user.is_authenticated %}
-                    <span class="top-bar-hello">{{ GREETING }}, {{ user.username }}</span>
+                    <span class="top-bar-hello">{{ GREETING }} {{ user.username }}</span>
                     <form method="post" action="{% url 'logout' %}" style="display:inline;">
                         {% csrf_token %}
                         <button type="submit" class="top-bar-btn">Выйти</button>
